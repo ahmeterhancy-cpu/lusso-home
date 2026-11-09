@@ -717,7 +717,9 @@ a.eyebrow:hover { color: var(--ink); }
   .hs-ctrl { top: 14px; right: 14px; bottom: auto; gap: 8px; padding: 6px 6px 6px 14px; }
   .hs-nav { display: none; }
   .hs-bars button { width: 24px; }
-  .hm-trust { justify-content: flex-start; gap: 10px 22px; font-size: 13px; }
+  .hm-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; font-size: 12px; line-height: 1.3; }
+  .hm-trust li { flex-direction: column; justify-content: center; gap: 6px; text-align: center; padding: 12px 6px; border-radius: 14px; background: var(--sand); color: var(--ink); }
+  .hm-trust .icon { font-size: 20px; }
   .sec-head { margin-bottom: 20px; }
   .sec-link { font-size: 13px; }
   .products-grid, .pgrid, .products-grid.cols-3 { grid-template-columns: repeat(2, 1fr); gap: 28px 12px; }
@@ -726,7 +728,7 @@ a.eyebrow:hover { color: var(--ink); }
   .pcard-add { width: 38px; height: 38px; right: 8px; bottom: 8px; }
   .labels { top: 8px; left: 8px; }
   .hm-arches { grid-template-columns: repeat(5, 42%); gap: 14px; margin-right: -16px; padding-right: 16px; }
-  .arch-name { font-size: 18px; }
+  .arch-name { font-size: 16px; white-space: nowrap; }
   .hm-collections { grid-template-columns: repeat(3, 78%); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 14px; margin-right: -16px; padding-right: 16px; }
   .hm-collections::-webkit-scrollbar { display: none; }
   .coll { scroll-snap-align: start; }
