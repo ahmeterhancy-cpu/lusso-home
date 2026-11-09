@@ -22,10 +22,14 @@
     .fi-topbar .fi-global-search-field .fi-input-wrp { background: #2c3338 !important; border-color: #3c434a !important; box-shadow: none !important; }
     .fi-topbar .fi-global-search-field input { color: #f0f0f1 !important; }
 
-    /* Yan menü */
+    /* Yan menü — üst bar 46px olduğu için menü de 46px'ten başlar (Filament varsayılanı 64px boşluk bırakıyordu) */
     .fi-sidebar { background: var(--wp-menu) !important; border: 0 !important; box-shadow: none !important; }
+    @media (min-width: 1024px) {
+        .fi-main-sidebar { top: 46px !important; height: calc(100dvh - 46px) !important; }
+    }
+    .fi-sidebar-nav { padding-top: 0 !important; }
     .fi-sidebar-header { background: var(--wp-menu) !important; border-bottom: 1px solid #2c3338 !important; box-shadow: none !important; height: 46px !important; }
-    .fi-sidebar-nav { padding: 6px 0 20px !important; gap: 0 !important; }
+    .fi-sidebar-nav { padding-bottom: 20px !important; gap: 0 !important; }
     .fi-sidebar-nav-groups { gap: 2px !important; }
     .fi-sidebar-group { gap: 0 !important; }
     .fi-sidebar-group-btn { padding: 12px 14px 4px !important; }
