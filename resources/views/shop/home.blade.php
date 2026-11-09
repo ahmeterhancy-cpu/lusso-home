@@ -31,7 +31,7 @@
     @endif
 
     <section class="image-trio">
-        @foreach ([['img/banner-1.webp', setting('banner1_link', route('category', 'mackenzie-childs'))], ['img/banner-2.jpg', setting('banner2_link', route('category', 'sofra-grubu'))], ['img/banner-3.jpg', setting('banner3_link', route('category', 'aksesuar'))]] as [$img, $link])
+        @foreach ([['img/banner-1.jpg', setting('banner1_link', route('category', 'mackenzie-childs'))], ['img/banner-2.jpg', setting('banner2_link', route('category', 'sofra-grubu'))], ['img/banner-3.jpg', setting('banner3_link', route('category', 'aksesuar'))]] as [$img, $link])
             <a href="{{ $link }}"><img src="{{ asset($img) }}" alt="Lusso Home Concept" width="670" height="670"></a>
         @endforeach
     </section>

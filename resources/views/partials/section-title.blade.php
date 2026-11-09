@@ -5,7 +5,7 @@
     </div>
 @else
     <div class="title-wrapper">
-        <span class="subtitle">#MyLussoLife</span>
+        @if ($subtitle ?? true)<span class="subtitle">#MyLussoLife</span>@endif
         <h4 class="title">{{ $title }}</h4>
     </div>
 @endif

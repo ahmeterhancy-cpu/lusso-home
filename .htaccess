@@ -1,0 +1,33 @@
+# Lusso Home Concept — Turhost / cPanel tek klasor kurulumu
+#
+# Depo klasorunun KENDISI public_html olacak sekilde acilir. Bu dosya:
+#   1. Kaynak dosyalari (app, config, .env, vendor…) disariya kapatir,
+#   2. Butun istekleri Laravel'in public/ klasorune yonlendirir.
+#
+# Ayri bir kurulum tercih edilirse (public_html dogrudan public/ klasorune
+# baglanirsa) bu dosyaya gerek kalmaz, silinebilir.
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1) Kaynak klasorlerine dogrudan erisim yasak.
+    #    /storage BILEREK disarida: public/storage sembolik bagi uzerinden
+    #    yuklenen gorseller sunulur.
+    RewriteCond %{REQUEST_URI} ^/(app|bootstrap|config|database|lang|resources|routes|tests|vendor|node_modules|\.git)(/|$) [NC]
+    RewriteRule ^ - [F,L]
+
+    # 2) public/ altinda gercek bir dosya veya klasor varsa oradan sun.
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # 3) Kalan her istek Laravel'e gider.
+    RewriteRule ^(.*)$ public/index.php [L]
+</IfModule>
+
+# Kok dizindeki hassas dosyalar
+<FilesMatch "^(\.env.*|composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml|vite\.config\.js|.*\.md|\.gitignore|\.cpanel\.yml|\.htaccess)$">
+    Require all denied
+</FilesMatch>

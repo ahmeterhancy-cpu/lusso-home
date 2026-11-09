@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $product->name)
+@section('body_class', 'single-product')
 @section('description', \Illuminate\Support\Str::limit(trim(strip_tags($product->short_description ?: $product->description)), 155))
 @section('og')
     <meta property="og:type" content="product">
@@ -138,7 +139,7 @@
 
 @if ($related->isNotEmpty())
     <section class="container related">
-        @include('partials.section-title', ['title' => 'İlgili Ürünler'])
+        @include('partials.section-title', ['title' => 'İlgili Ürünler', 'subtitle' => false])
         <div class="carousel" data-carousel style="--per:4;--per-md:3">
             <div class="carousel-track">
                 @foreach ($related as $rel)
