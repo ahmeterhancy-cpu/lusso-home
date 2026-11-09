@@ -32,6 +32,14 @@ class Order extends Model
     /** Yalnız panelden girilen siparişlerde kullanılan ek yöntem. */
     public const PANEL_METHODS = ['magaza' => 'Mağazada ödendi'];
 
+    /** Eski siteden aktarılan siparişlerdeki yöntemler (yeni siparişte seçilemez). */
+    public const LEGACY_METHODS = ['paynet' => 'Kredi Kartı (Paynet, eski site)'];
+
+    public static function methodName(?string $key): string
+    {
+        return (self::METHODS + self::PANEL_METHODS + self::LEGACY_METHODS)[$key] ?? (string) $key;
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -54,7 +62,7 @@ class Order extends Model
 
     public function methodLabel(): string
     {
-        return (self::METHODS + self::PANEL_METHODS)[$this->payment_method] ?? $this->payment_method;
+        return self::methodName($this->payment_method);
     }
 
     public function log(string $message, array $data = []): void

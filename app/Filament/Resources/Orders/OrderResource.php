@@ -231,14 +231,14 @@ class OrderResource extends Resource
                     ->description(fn (Order $record) => $record->phone.' · '.$record->city)->searchable(['first_name', 'last_name', 'email', 'phone']),
                 TextColumn::make('items_count')->label('Ürün')->suffix(' kalem')->toggleable(),
                 TextColumn::make('total')->label('Tutar')->formatStateUsing(fn ($state) => money($state))->sortable()->weight(FontWeight::Bold),
-                TextColumn::make('payment_method')->label('Ödeme')->formatStateUsing(fn ($state) => Order::METHODS[$state] ?? $state)
+                TextColumn::make('payment_method')->label('Ödeme')->formatStateUsing(fn ($state) => Order::methodName($state))
                     ->description(fn (Order $record) => self::paymentLabel($record))
                     ->color(fn (Order $record) => $record->payment_status === 'paid' ? 'success' : null),
                 TextColumn::make('status')->label('Durum')->badge()->formatStateUsing(fn ($state) => Order::STATUSES[$state] ?? $state)
                     ->color(fn ($state) => self::statusColor($state)),
             ])
             ->filters([
-                SelectFilter::make('payment_method')->label('Ödeme yöntemi')->options(Order::METHODS),
+                SelectFilter::make('payment_method')->label('Ödeme yöntemi')->options(Order::METHODS + Order::PANEL_METHODS + Order::LEGACY_METHODS),
                 SelectFilter::make('city')->label('Şehir')->options(fn () => Order::query()->distinct()->orderBy('city')->pluck('city', 'city')->all()),
                 Filter::make('date')->label('Tarih')->schema([
                     DatePicker::make('from')->label('Başlangıç'),

@@ -112,13 +112,13 @@ class Reports extends Page implements HasSchemas
             ->orderByDesc('revenue')->get()->map(fn ($r) => (array) $r)->all();
 
         $byMethod = (clone $paid)->groupBy('payment_method')->select('payment_method', DB::raw('COUNT(*) as n'), DB::raw('SUM(total) as revenue'))
-            ->get()->map(fn ($r) => ['label' => (Order::METHODS + Order::PANEL_METHODS)[$r->payment_method] ?? $r->payment_method, 'n' => $r->n, 'revenue' => (float) $r->revenue])->all();
+            ->get()->map(fn ($r) => ['label' => Order::methodName($r->payment_method), 'n' => $r->n, 'revenue' => (float) $r->revenue])->all();
 
         $byCity = (clone $paid)->groupBy('city')->select('city', DB::raw('COUNT(*) as n'), DB::raw('SUM(total) as revenue'))
             ->orderByDesc('revenue')->get()->toArray();
 
         $bySource = (clone $paid)->groupBy('source')->select('source', DB::raw('COUNT(*) as n'), DB::raw('SUM(total) as revenue'))
-            ->get()->map(fn ($r) => ['label' => $r->source === 'panel' ? 'Mağaza / telefon (panel)' : 'Web sitesi', 'n' => $r->n, 'revenue' => (float) $r->revenue])->all();
+            ->get()->map(fn ($r) => ['label' => match ($r->source) { 'panel' => 'Mağaza / telefon (panel)', 'eski' => 'Eski site (WooCommerce)', default => 'Web sitesi' }, 'n' => $r->n, 'revenue' => (float) $r->revenue])->all();
 
         $coupons = (clone $paid)->whereNotNull('coupon_code')->groupBy('coupon_code')
             ->select('coupon_code', DB::raw('COUNT(*) as n'), DB::raw('SUM(discount) as discount'), DB::raw('SUM(total) as revenue'))
@@ -151,7 +151,7 @@ class Reports extends Page implements HasSchemas
                         fputcsv($out, ['Sipariş', 'Ödeme tarihi', 'Müşteri', 'Telefon', 'Şehir', 'Ödeme', 'Kaynak', 'Ara toplam', 'İndirim', 'Kupon', 'Kargo', 'Toplam', 'Ürünler'], ';');
                         foreach ($orders as $o) {
                             fputcsv($out, [$o->number, $o->paid_at?->format('d.m.Y H:i'), $o->first_name.' '.$o->last_name, $o->phone, $o->city, $o->methodLabel(),
-                                $o->source === 'panel' ? 'Panel' : 'Web', $o->subtotal, $o->discount, $o->coupon_code, $o->shipping, $o->total,
+                                match ($o->source) { 'panel' => 'Panel', 'eski' => 'Eski site', default => 'Web' }, $o->subtotal, $o->discount, $o->coupon_code, $o->shipping, $o->total,
                                 $o->items->map(fn ($i) => $i->name.' x'.$i->quantity)->join(' | ')], ';');
                         }
                         fclose($out);
