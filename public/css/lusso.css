@@ -14,13 +14,13 @@
   --soft: #f7f7f7;
   --container: 1170px;
   --wide: 1320px;
-  --paper: #faf7f2;      /* sıcak kırık beyaz bölüm zemini */
-  --sand: #f3eee6;       /* ürün görseli zemini */
-  --ink: #1f1d1a;
-  --ink-2: #6b645a;
-  --line-2: #e9e2d7;
+  --paper: #ffffff;      /* bölüm zemini: düz beyaz */
+  --sand: #f4f4f4;       /* ürün görseli zemini: nötr açık gri */
+  --ink: #212121;
+  --ink-2: #6a6a6a;
+  --line-2: #e6e6e6;
   --gold-deep: #a86400;  /* beyaz üstünde okunur altın (yazı/indirim) */
-  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --serif: "Bodoni Moda", "Didot", Georgia, serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -407,7 +407,7 @@ body.menu-open .drawer-bg { opacity: 1; visibility: visible; }
 /* =====================================================================
    Modern vitrin (2026-11): ana sayfa, ürün kartı, ürün sayfası.
    Fotoğraflar renkli ve desenli (dama, çizgi, nazar mavisi) olduğu için
-   zemin sakin: sıcak kırık beyaz, koyu mürekkep yazı, serif başlık,
+   zemin sakin: düz beyaz, marka antrasiti yazı, Bodoni başlık,
    vurgu markanın altını. Kategori görselleri kemer biçiminde.
    ===================================================================== */
 .wrap { width: 100%; max-width: var(--wide); margin: 0 auto; padding: 0 32px; }
@@ -446,7 +446,7 @@ a.eyebrow:hover { color: var(--ink); }
 .pcard-img .hover-img { opacity: 0; }
 .pcard:hover .pcard-img img { transform: scale(1.03); }
 .pcard:hover .pcard-img .hover-img { opacity: 1; }
-.pcard .no-img { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #cfc6b8; font-size: 42px; }
+.pcard .no-img { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #cfcfcf; font-size: 42px; }
 .labels { position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; pointer-events: none; }
 .label { display: inline-block; padding: 5px 9px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1.2; color: #fff; }
 .label.onsale { background: var(--gold-deep); }
@@ -467,7 +467,7 @@ a.eyebrow:hover { color: var(--ink); }
 .pcard-name a:hover { color: var(--gold-deep); }
 .pcard-price { font-size: 15px; font-weight: 700; color: var(--ink); display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 .pcard-price ins { text-decoration: none; color: var(--gold-deep); }
-.pcard-price del { font-weight: 400; font-size: 13px; color: #a39b8f; }
+.pcard-price del { font-weight: 400; font-size: 13px; color: #9a9a9a; }
 .pcard-ask { font-size: 13px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 @media (hover: none) {
   .pcard-add { left: auto; width: 42px; padding: 0; opacity: 1; transform: none; border-radius: 50%; }
@@ -477,7 +477,7 @@ a.eyebrow:hover { color: var(--ink); }
 /* kaydırmalı ray (yeni aralık) */
 .carousel-track { gap: 24px; }
 .carousel-track > * { flex-basis: calc((100% - 24px * (var(--per, 4) - 1)) / var(--per, 4)); }
-.carousel-nav { width: 44px; height: 44px; border-radius: 50%; top: calc(50% - 60px); border: 0; box-shadow: 0 2px 10px rgba(31,29,26,.12); font-size: 16px; }
+.carousel-nav { width: 44px; height: 44px; border-radius: 50%; top: calc(50% - 60px); border: 0; box-shadow: 0 2px 10px rgba(33,33,33,.12); font-size: 16px; }
 .carousel-nav.prev { left: -18px; } .carousel-nav.next { right: -18px; }
 .carousel-dots button.active { background: var(--ink); }
 
@@ -561,7 +561,7 @@ a.eyebrow:hover { color: var(--ink); }
 .pd-crumbs .crumbs { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .pd-crumbs .crumbs a { color: var(--ink-2); }
 .pd-crumbs .crumbs a:hover { color: var(--ink); }
-.pd-crumbs .sep { margin: 0 8px; color: #c9c0b2; }
+.pd-crumbs .sep { margin: 0 8px; color: #c8c8c8; }
 .pd-crumbs .here { color: var(--ink); }
 .pd-crumbs .products-nav a { width: 36px; height: 36px; border-radius: 50%; align-items: center; color: var(--ink); }
 .pd-crumbs .products-nav a:hover { background: var(--paper); }
@@ -579,21 +579,21 @@ a.eyebrow:hover { color: var(--ink); }
 .pd-track::-webkit-scrollbar { display: none; }
 .pd-slide { flex: 0 0 100%; margin: 0; aspect-ratio: 1; scroll-snap-align: start; cursor: zoom-in; }
 .pd-slide img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-.pd-noimg { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; color: #cfc6b8; font-size: 64px; }
-.pd-zoom, .pd-arrow { position: absolute; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.92); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 17px; box-shadow: 0 2px 10px rgba(31,29,26,.1); }
+.pd-noimg { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; color: #cfcfcf; font-size: 64px; }
+.pd-zoom, .pd-arrow { position: absolute; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.92); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 17px; box-shadow: 0 2px 10px rgba(33,33,33,.1); }
 .pd-zoom { right: 14px; bottom: 14px; }
 .pd-arrow { top: calc(50% - 22px); opacity: 0; transition: opacity .2s; }
 .pd-arrow.prev { left: 14px; } .pd-arrow.next { right: 14px; }
 .pd-stage:hover .pd-arrow { opacity: 1; }
 .pd-dots { position: absolute; left: 0; right: 0; bottom: 18px; display: none; justify-content: center; gap: 6px; }
-.pd-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(31,29,26,.25); transition: width .2s, background-color .2s; }
+.pd-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(33,33,33,.25); transition: width .2s, background-color .2s; }
 .pd-dots span.active { width: 18px; border-radius: 3px; background: var(--ink); }
 
 .pd-gallery, .pd-info { position: sticky; top: 84px; } /* kısa olan sütun kayarken yerinde kalır */
 .pd-title { font-size: clamp(28px, 2.8vw, 40px); line-height: 1.12; margin: 0 0 18px; }
 .pd-price { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; font-size: 26px; font-weight: 700; color: var(--ink); }
 .pd-price ins { text-decoration: none; color: var(--gold-deep); }
-.pd-price del { font-size: 18px; font-weight: 400; color: #a39b8f; }
+.pd-price del { font-size: 18px; font-weight: 400; color: #9a9a9a; }
 .pd-badge { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 5px 10px; border-radius: 3px; background: var(--paper); color: var(--gold-deep); }
 .pd-stock { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2f6b3a; margin: 0 0 22px; }
 .pd-stock i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(47,107,58,.14); }
@@ -634,7 +634,7 @@ a.eyebrow:hover { color: var(--ink); }
 .pd-related { background: var(--paper); margin-top: 24px; }
 .pd-related .pcard-media { background: #fff; }
 
-.pd-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 65; display: none; align-items: center; gap: 12px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: #fff; box-shadow: 0 -4px 20px rgba(31,29,26,.12); transform: translateY(110%); transition: transform .3s ease; }
+.pd-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 65; display: none; align-items: center; gap: 12px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: #fff; box-shadow: 0 -4px 20px rgba(33,33,33,.12); transform: translateY(110%); transition: transform .3s ease; }
 .pd-bar.shown { transform: none; }
 .pd-bar img { width: 48px; height: 48px; border-radius: 6px; object-fit: contain; background: var(--sand); mix-blend-mode: multiply; }
 .pd-bar-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }

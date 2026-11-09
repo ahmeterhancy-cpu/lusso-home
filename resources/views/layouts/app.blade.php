@@ -17,7 +17,7 @@
     <meta property="og:locale" content="tr_TR">
     <link rel="icon" href="{{ asset('img/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=lato:300,400,400i,700,700i,900|fraunces:400,500,400i&display=swap">
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=lato:300,400,400i,700,700i,900|bodoni-moda:400,500&display=swap">
     <link rel="stylesheet" href="{{ asset('css/lusso.css') }}?v={{ filemtime(public_path('css/lusso.css')) }}">
     @stack('head')
     {!! setting('head_code') !!}
