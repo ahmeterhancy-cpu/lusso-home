@@ -30,6 +30,21 @@ php -S 127.0.0.1:8191 -t public server.php
 - Fiyatı 0 olan ürünler (eski sitede de öyle) "Devamını oku" gösterir, sepete eklenemez;
   ürün sayfasında WhatsApp'tan fiyat sorma bağlantısı çıkar.
 
+## Müşteri ve sipariş aktarımı (`php artisan lusso:aktar-siparis`)
+
+- Kaynak: `storage/app/woo/customers.json` ve `orders.json` (git'e girmez, kişisel veri).
+  Dökümler eski WP panelinde oturum açıkken tarayıcıdan salt okunur REST ile alındı
+  (`/wp-json/wc/v3/customers?role=all`, `/wp-json/wc/v3/orders?status=any`, alanlar kısaltılmış).
+- Tekrar çalıştırılabilir: üye ve sipariş `wc_id` ile eşleşir; `--deneme` yalnız sayar.
+- Eski şifreler REST'ten alınamaz: üyeler "Şifremi unuttum" ile yeni şifre belirler.
+- Personel hesapları (yönetici, mağaza müdürü) aktarılmaz; panel yetkisi elle verilir.
+- Sipariş numarası eskisiyle aynı (ör. 10847), kaynak `eski`. Tamamlanan = ödendi
+  (ödeme tarihi korunur), iptal = ödenmedi. Paynet ödemeleri "Kredi Kartı (Paynet, eski site)".
+- Ürün eşleşmesi: `wc_id`, yoksa stok kodu, yoksa birebir ad; eski sitede silinmiş ürünlerin
+  kalemleri ad ve fiyatla, ürün bağlantısı olmadan gelir.
+- **Canlıya geçmeden hemen önce** dökümleri yenileyip komutu bir kez daha çalıştırın
+  (son siparişler gelsin).
+
 ## Ödeme
 
 - **Tiko** (3D Secure): kart formu müşterinin tarayıcısından doğrudan Tiko'ya gider,
