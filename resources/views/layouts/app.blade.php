@@ -25,12 +25,17 @@
 <body class="@yield('body_class')">
 <div class="website-wrapper">
 
+    @php
+        $phone = setting('support_phone', '+90 539 109 99 00');
+        $headerLines = array_values(array_filter(site('header_lines', [])));
+        $slogan = array_values(array_filter($headerLines, fn ($l) => ! str_starts_with(trim($l), '#')));
+        $hashtag = collect($headerLines)->first(fn ($l) => str_starts_with(trim($l), '#'));
+        $banner = collect(\App\Models\Campaign::active())->pluck('banner')->filter()->first();
+    @endphp
     <div class="topbar">
-        <div class="container">
-            <div class="support"><span>DESTEK HATTI:</span> <a href="tel:{{ preg_replace('/[^0-9+]/', '', setting('support_phone', '+90 539 109 99 00')) }}">{{ setting('support_phone', '+90 539 109 99 00') }}</a></div>
-            @if ($banner = collect(\App\Models\Campaign::active())->pluck('banner')->filter()->first())
-                <div class="campaign-banner">{{ $banner }}</div>
-            @endif
+        <div class="tb-in">
+            <a class="tb-phone" href="tel:{{ preg_replace('/[^0-9+]/', '', $phone) }}">{{ icon('phone') }} <span class="tb-label">Destek hattı</span> {{ $phone }}</a>
+            @if ($banner)<p class="campaign-banner">{{ $banner }}</p>@endif
             <ul class="topbar-menu">
                 @foreach (site('topbar_links', []) as $l)
                     <li><a href="{{ url($l['url'] ?? '/') }}">{{ $l['label'] }}</a></li>
@@ -39,28 +44,33 @@
         </div>
     </div>
 
+    {{-- Başlık: logo koyu zeminli (#37383c) olduğu için başlık da aynı koyu tonda --}}
     <header class="main-header">
         <div class="header-row">
-            <div>
+            <div class="header-left">
                 <button class="mobile-toggle" type="button" data-open-menu aria-label="Menü">{{ icon('menu') }}</button>
-                <div class="header-text">
-                    @foreach (array_values(array_filter(site('header_lines', []))) as $i => $line)
-                        @if ($i < 2)<strong>{{ $line }}</strong>@else{{ $line }}@endif
-                    @endforeach
-                </div>
+                @if ($slogan || $hashtag)
+                    <div class="header-text">
+                        @if ($slogan)<p class="hd-slogan">{{ implode(' ', $slogan) }}</p>@endif
+                        @if ($hashtag)<p class="hd-tag" lang="en">{{ $hashtag }}</p>@endif
+                    </div>
+                @endif
             </div>
             <div class="site-logo">
                 <a href="{{ route('home') }}"><img src="{{ asset('img/logo.png') }}" alt="Lusso Home Concept" width="175" height="69"></a>
             </div>
             <div class="header-right">
-                @auth
-                    <a href="{{ route('account') }}" class="login-link">Hesabım</a>
-                @else
-                    <a href="{{ route('account') }}" class="login-link">Login / Register</a>
-                @endauth
-                <button type="button" data-open-search aria-label="Ara">{{ icon('search') }}</button>
-                <a href="{{ route('wishlist') }}" aria-label="Beğendiklerim">{{ icon('heart') }}<span class="badge" data-wishlist-count>{{ count($wishlistIds) }}</span></a>
-                <a href="{{ route('cart') }}" class="cart-link" data-open-cart aria-label="Sepet">{{ icon('cart') }}<span class="totals"><span data-cart-count>{{ $cartCount }}</span> / <span data-cart-total>{{ money($cartTotal) }}</span></span></a>
+                <a href="{{ route('account') }}" class="hd-account">
+                    <span class="hd-ic">{{ icon('user') }}</span>
+                    @auth
+                        <span class="hd-account-text"><small>Merhaba</small>Hesabım</span>
+                    @else
+                        <span class="hd-account-text"><small>Giriş yap</small>Üye ol</span>
+                    @endauth
+                </a>
+                <button type="button" class="hd-ic" data-open-search aria-label="Ara">{{ icon('search') }}</button>
+                <a href="{{ route('wishlist') }}" class="hd-ic" aria-label="Beğendiklerim">{{ icon('heart') }}<span class="badge" data-wishlist-count>{{ count($wishlistIds) }}</span></a>
+                <a href="{{ route('cart') }}" class="cart-link" data-open-cart aria-label="Sepet">{{ icon('cart') }}<span class="cart-count" data-cart-count>{{ $cartCount }}</span><span class="totals" data-cart-total>{{ money($cartTotal) }}</span></a>
             </div>
         </div>
         <div class="navigation-wrap main-nav-wrap">
@@ -73,8 +83,8 @@
             <div class="site-logo"><a href="{{ route('home') }}"><img src="{{ asset('img/logo.png') }}" alt="Lusso Home Concept"></a></div>
             @include('partials.nav')
             <div class="header-right">
-                <button type="button" data-open-search aria-label="Ara">{{ icon('search') }}</button>
-                <a href="{{ route('cart') }}" class="cart-link" data-open-cart aria-label="Sepet">{{ icon('cart') }}<span class="totals"><span data-cart-count>{{ $cartCount }}</span> / <span data-cart-total>{{ money($cartTotal) }}</span></span></a>
+                <button type="button" class="hd-ic" data-open-search aria-label="Ara">{{ icon('search') }}</button>
+                <a href="{{ route('cart') }}" class="cart-link" data-open-cart aria-label="Sepet">{{ icon('cart') }}<span class="cart-count" data-cart-count>{{ $cartCount }}</span><span class="totals" data-cart-total>{{ money($cartTotal) }}</span></a>
             </div>
         </div>
     </div>
