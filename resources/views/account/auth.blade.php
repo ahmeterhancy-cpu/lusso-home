@@ -1,44 +1,80 @@
 @extends('layouts.app')
 
-@section('title', 'Hesabım')
-@section('page_title')
-    @include('partials.page-title', ['title' => 'Hesabım'])
-@endsection
+@section('title', 'Giriş Yap / Üye Ol')
 
 @section('content')
-<div class="container">
-    <div style="padding-top:20px">@include('partials.flash')</div>
-    <div class="auth-cols">
-        <div>
-            <h2>{{ icon('login') }} Giriş Yap</h2>
-            <form method="post" action="{{ route('login') }}">
-                @csrf
-                <div class="form-row"><label for="email">Kullanıcı adı veya e-mail <span class="req">*</span></label><input id="email" type="text" name="email" value="{{ old('email') }}" required autocomplete="username"></div>
-                <div class="form-row"><label for="password">Şifre <span class="req">*</span></label><input id="password" type="password" name="password" required autocomplete="current-password"></div>
-                <button type="submit" class="btn btn-login">Giriş</button>
-                <div class="auth-foot">
-                    <label class="check"><input type="checkbox" name="remember" value="1"> Beni Hatırla</label>
-                    <a href="{{ route('password.request') }}">{{ icon('support') }} Şifreni Unuttun mu?</a>
-                </div>
-            </form>
+@php
+    // Kayıt formunda hata varsa ya da ?action=register ile gelindiyse "Üye ol" sekmesi açık başlar.
+    $showRegister = $mode === 'register' || $errors->hasAny(['name', 'password', 'terms']) || old('name');
+@endphp
+<section class="wrap au">
+    @include('account._auth-visual')
+
+    <div class="au-card" data-auth>
+        <div class="au-tabs" role="tablist">
+            <a href="{{ route('account') }}" role="tab" id="tab-login" aria-controls="panel-login" aria-selected="{{ $showRegister ? 'false' : 'true' }}" data-auth-tab="login">Giriş yap</a>
+            <a href="{{ route('account', ['action' => 'register']) }}" role="tab" id="tab-register" aria-controls="panel-register" aria-selected="{{ $showRegister ? 'true' : 'false' }}" data-auth-tab="register">Üye ol</a>
         </div>
-        <div>
-            <h2>Üye Ol</h2>
-            @if ($mode === 'register' || $errors->has('name') || $errors->has('password') || old('name'))
-                <form method="post" action="{{ route('register') }}" style="text-align:left">
-                    @csrf
-                    <div class="form-row"><label for="r-name">Ad Soyad <span class="req">*</span></label><input id="r-name" type="text" name="name" value="{{ old('name') }}" required autocomplete="name"></div>
-                    <div class="form-row"><label for="r-email">E-posta adresi <span class="req">*</span></label><input id="r-email" type="email" name="email" value="{{ old('email') }}" required autocomplete="email"></div>
-                    <div class="form-row"><label for="r-password">Şifre <span class="req">*</span></label><input id="r-password" type="password" name="password" required autocomplete="new-password" minlength="8"></div>
-                    <div class="form-row"><label for="r-password2">Şifre (tekrar) <span class="req">*</span></label><input id="r-password2" type="password" name="password_confirmation" required autocomplete="new-password"></div>
-                    <label class="check" style="margin-bottom:20px"><input type="checkbox" name="terms" value="1"> <span><a href="{{ route('page', 'uyelik') }}" target="_blank">Üyelik sözleşmesini</a> okudum, kabul ediyorum.</span></label>
-                    <button type="submit" class="btn btn-black btn-block">Üye Ol</button>
-                </form>
-            @else
-                <p>Bu siteye kayıt olarak sipariş durumunuzu ve geçmişinizi görebilirsiniz. Aşağıdaki alanları doldurun, hesabınız hemen oluşturulsun. Yalnızca alışverişi daha hızlı ve kolay hale getirmek için gerekli bilgileri isteriz.</p>
-                <a href="{{ route('account', ['action' => 'register']) }}" class="btn btn-black">Üye Ol</a>
-            @endif
+
+        @include('partials.flash')
+
+        <div id="panel-login" role="tabpanel" aria-labelledby="tab-login" @if ($showRegister) hidden @endif>
+            <h1 class="au-title serif">Tekrar hoş geldiniz</h1>
+            <p class="au-sub">Siparişlerinizi ve beğendiklerinizi görmek için giriş yapın.</p>
+            <form method="post" action="{{ route('login') }}" class="au-form">
+                @csrf
+                <div class="au-field">
+                    <label for="email">E-posta adresi</label>
+                    <input id="email" type="text" name="email" value="{{ $showRegister ? '' : old('email') }}" required autocomplete="username" placeholder="ornek@eposta.com">
+                </div>
+                <div class="au-field">
+                    <div class="au-label-row"><label for="password">Şifre</label><a href="{{ route('password.request') }}">Şifremi unuttum</a></div>
+                    <div class="au-pw">
+                        <input id="password" type="password" name="password" required autocomplete="current-password">
+                        <button type="button" data-pw-toggle aria-label="Şifreyi göster">{{ icon('eye') }}</button>
+                    </div>
+                </div>
+                <label class="au-check"><input type="checkbox" name="remember" value="1"> <span>Beni hatırla</span></label>
+                <button type="submit" class="mbtn mbtn-dark au-submit">Giriş yap {{ icon('arrow-right') }}</button>
+            </form>
+            <p class="au-switch">Hesabınız yok mu? <a href="{{ route('account', ['action' => 'register']) }}" data-auth-tab="register">Hemen üye olun</a></p>
+        </div>
+
+        <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" @unless ($showRegister) hidden @endunless>
+            <h1 class="au-title serif">Lusso'ya katılın</h1>
+            <p class="au-sub">Bir dakikada hesabınızı oluşturun; siparişleriniz ve beğendikleriniz tek yerde.</p>
+            <form method="post" action="{{ route('register') }}" class="au-form">
+                @csrf
+                <div class="au-field">
+                    <label for="r-name">Ad soyad</label>
+                    <input id="r-name" type="text" name="name" value="{{ old('name') }}" required autocomplete="name">
+                </div>
+                <div class="au-field">
+                    <label for="r-email">E-posta adresi</label>
+                    <input id="r-email" type="email" name="email" value="{{ $showRegister ? old('email') : '' }}" required autocomplete="email" placeholder="ornek@eposta.com">
+                </div>
+                <div class="au-grid">
+                    <div class="au-field">
+                        <label for="r-password">Şifre</label>
+                        <div class="au-pw">
+                            <input id="r-password" type="password" name="password" required autocomplete="new-password" minlength="8">
+                            <button type="button" data-pw-toggle aria-label="Şifreyi göster">{{ icon('eye') }}</button>
+                        </div>
+                    </div>
+                    <div class="au-field">
+                        <label for="r-password2">Şifre (tekrar)</label>
+                        <div class="au-pw">
+                            <input id="r-password2" type="password" name="password_confirmation" required autocomplete="new-password">
+                            <button type="button" data-pw-toggle aria-label="Şifreyi göster">{{ icon('eye') }}</button>
+                        </div>
+                    </div>
+                </div>
+                <p class="au-hint">En az 8 karakter.</p>
+                <label class="au-check"><input type="checkbox" name="terms" value="1" @checked(old('terms'))> <span><a href="{{ route('page', 'uyelik') }}" target="_blank">Üyelik sözleşmesini</a> okudum, kabul ediyorum.</span></label>
+                <button type="submit" class="mbtn mbtn-dark au-submit">Üye ol {{ icon('arrow-right') }}</button>
+            </form>
+            <p class="au-switch">Zaten üye misiniz? <a href="{{ route('account') }}" data-auth-tab="login">Giriş yapın</a></p>
         </div>
     </div>
-</div>
+</section>
 @endsection

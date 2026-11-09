@@ -293,4 +293,32 @@
       if (phone.matches && d.open) fcols.forEach(function (o) { if (o !== d) o.open = false; });
     });
   });
+
+  /* ---- giriş / üye ol sekmeleri (JS yoksa bağlantılar sayfayı yeniler) ---- */
+  var auth = $('[data-auth]');
+  if (auth) {
+    var showTab = function (name) {
+      $$('[role="tab"]', auth).forEach(function (t) {
+        var on = t.dataset.authTab === name;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        $('#' + t.getAttribute('aria-controls')).hidden = !on;
+      });
+      try { history.replaceState(null, '', name === 'register' ? '?action=register' : location.pathname); } catch (err) { }
+      var first = $('#panel-' + name + ' input:not([type=hidden])');
+      if (first && window.innerWidth > 767) first.focus();
+    };
+    $$('[data-auth-tab]', auth).forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); showTab(a.dataset.authTab); });
+    });
+  }
+
+  /* ---- şifreyi göster / gizle ---- */
+  $$('[data-pw-toggle]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var input = b.parentNode.querySelector('input'), show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      b.classList.toggle('on', show);
+      b.setAttribute('aria-label', show ? 'Şifreyi gizle' : 'Şifreyi göster');
+    });
+  });
 })();
