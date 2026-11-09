@@ -4,6 +4,24 @@ Eski lussohomeconcept.com (WordPress + WooCommerce, Basel teması) sitesinin
 Laravel 13 + Filament 5 ile yeniden yazımı. Tasarım eski sitenin ölçüleriyle
 birebir; kod sıfırdan.
 
+## Geçici canlı: yeni.lussohomeconcept.com (Turhost, cPanel luss6117)
+
+- Alt alan belge kökü `~/lusso-yeni/public`; kod cPanel **Git Version Control** ile
+  GitHub `ahmeterhancy-cpu/lusso-home` deposunun **`canli`** dalından gelir (Terminal yok).
+- `canli` dalı = `master` + üretim `vendor/` (composer --no-dev, platform PHP 8.3) +
+  `public/medya` görselleri + `database/canli/lusso-icerik.sql.gz` (kişisel veri YOK).
+- PHP: hesap sürümünden bağımsız, `public/.htaccess` içindeki
+  `SetHandler application/x-httpd-alt-php83___lsphp` ile 8.3. (8.4 işleyicisi PHP Selector
+  eklentilerini okumuyor; 8.3 okuyor. 8.3 için intl/zip/fileinfo/sodium açıldı.)
+- `yeni.*` için `X-Robots-Tag: noindex` (.htaccess) ve panelde robots.txt `Disallow: /`.
+- `.env` sunucuda elle (cPanel) yazıldı; veritabanı `luss6117_yeni`. E-posta `log`, Tiko boş.
+- Klon klasörü `0700` geldi → `~/lusso-yeni` izni `0755` yapıldı (yoksa her şey 404).
+- **Güncelleme:** `master`'daki değişiklikleri `canli`'ya birleştir, gerekirse
+  `composer install --no-dev` ile vendor'ı güncelle, push → cPanel Git → "Update from Remote".
+  Yeni göç varsa sunucuda Terminal olmadığından geçici, anahtarlı bir kurulum sayfasıyla
+  `migrate --force` çalıştırılır ve sayfa hemen silinir.
+- Müşteri/sipariş verisi GitHub'a konmaz; sunucuya cPanel oturumundan doğrudan yazılır.
+
 ## Yerelde çalıştırma
 
 ```
