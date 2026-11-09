@@ -28,5 +28,4 @@ Thumbs.db
 # Eski siteden alınan referanslar (depoya girmez)
 /_referans
 # Ürün görselleri (eski siteden ~5000 dosya; yayına çıkarken ayrıca karar verilecek)
-/public/medya
 /storage/app/gorsel-listesi.txt
