@@ -95,37 +95,80 @@
         @yield('content')
     </main>
 
+    @php
+        $footerStores = \App\Support\SiteContent::stores();
+        $footerEmail = $footerStores->pluck('emails')->flatten()->first();
+        $fb = setting('facebook', 'https://www.facebook.com/lussohomeconcept');
+        $ig = setting('instagram', 'https://www.instagram.com/lussohomeconcept');
+        $waNo = preg_replace('/\D/', '', setting('whatsapp', '905391099900'));
+    @endphp
     <footer class="footer">
-        <div class="footer-logo"><a href="{{ route('home') }}"><img src="{{ asset('img/logo.png') }}" alt="Lusso Home Concept" loading="lazy"></a></div>
-        <div class="footer-cols">
+        <div class="ft-main">
+            <div class="ft-brand">
+                <a href="{{ route('home') }}" class="ft-logo"><img src="{{ asset('img/logo.png') }}" alt="Lusso Home Concept" loading="lazy" width="190" height="75"></a>
+                @if ($slogan)<p class="ft-slogan">{{ implode(' ', $slogan) }}</p>@endif
+                <div class="ft-social">
+                    @if ($ig)<a href="{{ $ig }}" target="_blank" rel="noopener" aria-label="Instagram">{{ icon('instagram') }}</a>@endif
+                    @if ($fb)<a href="{{ $fb }}" target="_blank" rel="noopener" aria-label="Facebook">{{ icon('facebook') }}</a>@endif
+                    @if ($waNo)<a href="https://wa.me/{{ $waNo }}" target="_blank" rel="noopener" aria-label="WhatsApp">{{ icon('whatsapp') }}</a>@endif
+                    @if ($footerEmail)<a href="mailto:{{ $footerEmail }}" aria-label="E-posta">{{ icon('paper-plane') }}</a>@endif
+                </div>
+            </div>
+
+            {{-- Telefonda açılır kapanır (JS masaüstünde hepsini açık tutar; JS yoksa hepsi açık) --}}
             @foreach (site('footer_columns', []) as $col)
-                <div>
-                    <h5 class="widget-title">{{ $col['title'] }}</h5>
+                <details class="fcol" open data-fcol>
+                    <summary class="widget-title">{{ $col['title'] }} {{ icon('down') }}</summary>
                     <ul>
                         @foreach ($col['links'] ?? [] as $l)
                             <li><a href="{{ url($l['url'] ?? '/') }}">{{ $l['label'] }}</a></li>
                         @endforeach
                     </ul>
-                </div>
+                </details>
             @endforeach
-            <div class="contact">
-                <h5 class="widget-title">{{ site('contact_title') }}</h5>
-                {!! setting('footer_contact', \App\Support\SiteContent::FOOTER_CONTACT) !!}
-            </div>
+
+            <details class="fcol ft-stores" open data-fcol>
+                <summary class="widget-title">Mağazalarımız {{ icon('down') }}</summary>
+                <ul>
+                    @foreach ($footerStores as $store)
+                        <li class="ft-store">
+                            <span class="ft-store-label">{{ $store['label'] }}</span>
+                            <a href="{{ $store['map'] }}" target="_blank" rel="noopener" class="ft-store-place">{{ $store['place'] }}</a>
+                            @if ($store['note'])<span class="ft-store-note">{{ $store['note'] }}</span>@endif
+                            @foreach ($store['phones'] as $p)
+                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $p) }}" class="ft-store-tel">{{ icon('phone') }} {{ $p }}</a>
+                            @endforeach
+                        </li>
+                    @endforeach
+                </ul>
+            </details>
         </div>
-        <div class="copyrights">{{ \App\Support\SiteContent::text(site('copyright')) }}
-            @if (site('credit'))
-                @if (site('credit_url'))<a href="{{ site('credit_url') }}" target="_blank" rel="noopener">{{ site('credit') }}</a>@else{{ site('credit') }}@endif
-            @endif
+
+        <div class="ft-bottom">
+            <p class="ft-copy">{{ \App\Support\SiteContent::text(site('copyright')) }}
+                @if (site('credit'))
+                    <span class="ft-credit">@if (site('credit_url'))<a href="{{ site('credit_url') }}" target="_blank" rel="noopener">{{ site('credit') }}</a>@else{{ site('credit') }}@endif</span>
+                @endif
+            </p>
+            <ul class="ft-pay" aria-label="Ödeme yöntemleri">
+                <li>{{ icon('card') }} Kredi kartı</li>
+                <li>{{ icon('shield') }} Havale / EFT</li>
+                <li>{{ icon('truck') }} Kapıda ödeme</li>
+            </ul>
         </div>
     </footer>
 </div>
 
-<div class="side-social">
-    @if ($fb = setting('facebook', 'https://www.facebook.com/lussohomeconcept'))<a href="{{ $fb }}" class="fb" target="_blank" rel="noopener" aria-label="Facebook">{{ icon('facebook') }}</a>@endif
-    @if ($ig = setting('instagram', 'https://www.instagram.com/lussohomeconcept'))<a href="{{ $ig }}" class="ig" target="_blank" rel="noopener" aria-label="Instagram">{{ icon('instagram') }}</a>@endif
-</div>
 <button class="scroll-top" type="button" data-scroll-top aria-label="Yukarı">{{ icon('up') }}</button>
+
+{{-- Telefonda alttan sabit gezinme çubuğu (sepet üst başlıkta) --}}
+<nav class="mnav" aria-label="Alt menü">
+    <a href="{{ route('home') }}" @class(['active' => request()->routeIs('home')])>{{ icon('home') }}<span>Ana Sayfa</span></a>
+    <button type="button" data-open-menu>{{ icon('menu') }}<span>Kategoriler</span></button>
+    <button type="button" data-open-search>{{ icon('search') }}<span>Ara</span></button>
+    <a href="{{ route('wishlist') }}" @class(['active' => request()->routeIs('wishlist')])>{{ icon('heart') }}<span>Beğendiklerim</span><b class="mnav-badge" data-wishlist-count @if (! count($wishlistIds)) data-zero @endif>{{ count($wishlistIds) }}</b></a>
+    <a href="{{ route('account') }}" @class(['active' => request()->routeIs('account*')])>{{ icon('user') }}<span>Hesabım</span></a>
+</nav>
 
 <div class="search-overlay" data-search>
     <button class="close" type="button" data-close-search aria-label="Kapat">{{ icon('close') }}</button>

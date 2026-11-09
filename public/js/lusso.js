@@ -77,7 +77,7 @@
           var s = b.querySelector('span');
           if (s) s.textContent = j.added ? 'Beğendiklerimde' : 'Beğendiklerime ekle';
         });
-        $$('[data-wishlist-count]').forEach(function (c) { c.textContent = j.count; });
+        $$('[data-wishlist-count]').forEach(function (c) { c.textContent = j.count; c.toggleAttribute('data-zero', !j.count); });
         toast(j.added ? 'Beğendiklerinize eklendi.' : 'Beğendiklerinizden çıkarıldı.');
       });
     } else if ((t = e.target.closest('[data-qty]'))) {
@@ -281,5 +281,16 @@
   if (cookie) $('[data-cookie-ok]', cookie).addEventListener('click', function () {
     cookie.hidden = true;
     try { localStorage.setItem('lusso-cookie', '1'); } catch (err) { }
+  });
+
+  /* ---- alt bilgi: telefonda açılır kapanır, masaüstünde hep açık ---- */
+  var fcols = $$('[data-fcol]'), phone = window.matchMedia('(max-width: 767px)');
+  function syncFooter() { fcols.forEach(function (d) { d.open = !phone.matches; }); }
+  syncFooter();
+  if (phone.addEventListener) phone.addEventListener('change', syncFooter);
+  fcols.forEach(function (d) {
+    d.addEventListener('toggle', function () { // biri açılınca diğerleri kapansın
+      if (phone.matches && d.open) fcols.forEach(function (o) { if (o !== d) o.open = false; });
+    });
   });
 })();

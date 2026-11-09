@@ -40,33 +40,7 @@ class ShopController extends Controller
         $trioSlugs = collect(site('trio', []))->map(fn ($b) => basename(parse_url($b['link'] ?? '', PHP_URL_PATH) ?: ''));
         $trioNames = Category::whereIn('slug', $trioSlugs->filter())->pluck('name', 'slug');
 
-        // Mağazalar: alt bilgideki iletişim metninin her paragrafı bir şube.
-        $stores = collect(preg_split('~</p>~i', (string) setting('footer_contact', \App\Support\SiteContent::FOOTER_CONTACT)))
-            ->map(fn ($p) => trim(strip_tags($p, '<br>')))
-            ->filter()
-            ->map(function ($p) {
-                $lines = array_values(array_filter(array_map('trim', preg_split('~<br\s*/?>~i', $p))));
-                // "Şube 1: Adres (not)" → etiket, yer, not
-                [$label, $place] = array_pad(array_map('trim', explode(':', (string) array_shift($lines), 2)), 2, null);
-                if (! $place) {
-                    [$label, $place] = ['Mağaza', $label];
-                }
-                $note = preg_match('~\(([^)]+)\)~u', $place, $m) ? $m[1] : null;
-                $place = trim(preg_replace('~\s*\([^)]*\)~u', '', $place));
-                $store = ['label' => $label, 'place' => $place, 'note' => $note, 'phones' => [], 'emails' => [], 'lines' => []];
-                foreach ($lines as $line) {
-                    if (preg_match('/^(tel|telefon)\s*:?\s*(.+)$/iu', $line, $m)) {
-                        $store['phones'][] = trim($m[2]);
-                    } elseif (preg_match('/^e-?mail\s*:?\s*(.+)$/iu', $line, $m)) {
-                        $store['emails'][] = trim($m[1]);
-                    } else {
-                        $store['lines'][] = $line;
-                    }
-                }
-                $store['map'] = 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($place.', Kıbrıs');
-
-                return $store;
-            })->values();
+        $stores = \App\Support\SiteContent::stores();
 
         return view('shop.home', [
             'trioNames' => $trioSlugs->map(fn ($s) => $trioNames[$s] ?? null)->all(),
