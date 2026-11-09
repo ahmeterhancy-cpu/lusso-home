@@ -1,7 +1,9 @@
 <?php
 // public/medya/urunler altındaki dosyaların gerçekten görsel olduğunu doğrular
 // (eski sunucu hata sayfası ya da yarım dosya döndürmüş olabilir). Kullanım: php tools/gorsel-kontrol.php
+require __DIR__.'/gorsel-butunluk.php';
 $d = __DIR__.'/../public/medya/urunler';
+$half = 0;
 $n = $small = $bytes = 0;
 $bad = [];
 foreach (scandir($d) as $f) {
@@ -18,7 +20,10 @@ foreach (scandir($d) as $f) {
     $h = bin2hex((string) file_get_contents($p, false, null, 0, 4));
     if (! preg_match('/^(ffd8|89504e47|52494646|47494638)/', $h)) {
         $bad[] = "$f ($h)";
+    } elseif (! gorsel_tam_mi($p)) {
+        $half++;
+        $bad[] = "$f (yarım)";
     }
 }
-echo "toplam $n dosya, 1KB altı $small, görsel olmayan ".count($bad).', boyut '.round($bytes / 1048576)." MB\n";
+echo "toplam $n dosya, 1KB altı $small, yarım $half, sorunlu ".count($bad).', boyut '.round($bytes / 1048576)." MB\n";
 echo implode("\n", array_slice($bad, 0, 10)).($bad ? "\n" : '');
