@@ -77,5 +77,37 @@
     .fi-simple-layout { background: var(--wp-bg) !important; }
     .fi-simple-main { border-radius: 2px !important; box-shadow: 0 1px 3px rgba(0,0,0,.04) !important; border: 1px solid var(--wp-border) !important; border-top: 4px solid var(--lusso-gold) !important; }
 
+    /* Modern giriş: solda marka paneli (auth-side), sağda sade form */
+    .fi-simple-layout:has(.lusso-auth-side) { display: grid !important; grid-template-columns: minmax(0, 1.15fr) minmax(440px, 1fr); min-height: 100vh; padding: 0 !important; background: #fff !important; }
+    .lusso-auth-side { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; min-height: 100vh; padding: 44px 52px; color: rgba(255,255,255,.8); background: linear-gradient(180deg, #37383c 0%, #37383c 22%, rgba(55,56,60,.9) 48%, rgba(40,40,44,.62) 100%), var(--auth-img) center / cover no-repeat, #37383c; }
+    .lusso-auth-logo { width: 190px; height: auto; margin-left: -8px; }
+    .lusso-auth-eyebrow { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--lusso-gold); }
+    .lusso-auth-copy h2 { margin: 0 0 22px; font-size: clamp(30px, 3vw, 44px); line-height: 1.1; font-weight: 700; color: #fff; letter-spacing: -.01em; }
+    .lusso-auth-copy ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .lusso-auth-copy li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+    .lusso-auth-copy li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--lusso-gold); box-shadow: 0 0 0 4px rgba(220,163,68,.2); }
+    .lusso-auth-back { align-self: flex-start; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.75); padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.1); transition: background-color .2s, color .2s; }
+    .lusso-auth-back:hover { background: rgba(255,255,255,.18); color: #fff; }
+
+    .fi-simple-layout:has(.lusso-auth-side) .fi-simple-main-ctn { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 40px 32px; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-simple-main { width: 100%; max-width: 410px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-simple-header { align-items: flex-start !important; text-align: left !important; margin-bottom: 8px; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-simple-header .fi-logo { display: none !important; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-simple-header-heading { font-size: 30px !important; line-height: 1.15 !important; font-weight: 700 !important; letter-spacing: -.01em; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-simple-header-subheading { text-align: left !important; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-input-wrp { border-radius: 10px !important; min-height: 48px; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-input { min-height: 46px; font-size: 15px !important; }
+    .fi-simple-layout:has(.lusso-auth-side) .fi-btn { border-radius: 10px !important; min-height: 48px; font-size: 15px !important; }
+    .fi-simple-layout:has(.lusso-auth-side) button[type=submit].fi-btn { background: #212121 !important; color: #fff !important; }
+    .fi-simple-layout:has(.lusso-auth-side) button[type=submit].fi-btn:hover { background: #a86400 !important; }
+    @media (max-width: 1023px) {
+        .fi-simple-layout:has(.lusso-auth-side) { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
+        .lusso-auth-side { min-height: 0; padding: 24px 22px 26px; gap: 14px; background: #37383c; }
+        .lusso-auth-logo { width: 140px; }
+        .lusso-auth-copy h2 { font-size: 24px; margin: 0; }
+        .lusso-auth-copy ul, .lusso-auth-back { display: none; }
+        .fi-simple-layout:has(.lusso-auth-side) .fi-simple-main-ctn { min-height: 0; align-items: flex-start; padding: 32px 22px 48px; }
+    }
+
     .lusso-thumb { width: 44px; height: 44px; object-fit: contain; background: #fff; border: 1px solid #dcdcde; border-radius: 2px; }
 </style>

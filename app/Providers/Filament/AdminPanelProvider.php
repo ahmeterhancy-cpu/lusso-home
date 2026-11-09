@@ -64,6 +64,7 @@ class AdminPanelProvider extends PanelProvider
                     ->sort(99),
             ])
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.styles'))
+            ->renderHook(PanelsRenderHook::SIMPLE_LAYOUT_START, fn () => view('filament.auth-side'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([Dashboard::class])
