@@ -23,6 +23,7 @@ class ImportWoo extends Command
         {--bitis=0 : Son ürün sayfası, 0 = sonuna kadar}
         {--kategorisiz : Kategorileri yeniden aktarma (paralel çalışmada)}
         {--gorselsiz : Görselleri indirme}
+        {--bekle=5 : Sayfalar arası bekleme (sn)}
         {--liste : Görselleri indirmek yerine storage/app/gorsel-listesi.txt dosyasına yaz}';
 
     protected $description = 'Eski WooCommerce sitesinden kategori, ürün ve görselleri aktarır';
@@ -117,6 +118,7 @@ class ImportWoo extends Command
                 $bar->advance();
             }
             gc_collect_cycles();
+            sleep((int) $this->option('bekle')); // eski canlı siteyi yormamak için
         }
         $bar->finish();
         $this->newLine();

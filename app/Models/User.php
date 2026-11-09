@@ -12,7 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'address', 'city'])]
+// is_admin yalnız panelden atanır; vitrin denetleyicileri alanları tek tek seçiyor (only()).
+#[Fillable(['name', 'email', 'password', 'phone', 'address', 'city', 'is_admin'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {

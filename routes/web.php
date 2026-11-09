@@ -56,5 +56,12 @@ Route::post('/iletisim', [PageController::class, 'sendContact'])->middleware('th
 Route::get('/blog', [PageController::class, 'blog'])->name('blog');
 Route::get('/blog/{slug}', [PageController::class, 'post'])->name('post');
 
+// Panelden sipariş fişi yazdırma (yalnız yönetici).
+Route::get('/admin/siparis/{order}/yazdir', function (\App\Models\Order $order) {
+    abort_unless(auth()->user()?->is_admin, 403);
+
+    return view('admin.order-print', ['order' => $order->load('items')]);
+})->middleware('auth')->name('admin.order.print');
+
 // İçerik sayfaları (hakkimizda, uyelik, teslimat-kargo …) — en sonda kalmalı.
 Route::get('/{slug}', [PageController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('page');

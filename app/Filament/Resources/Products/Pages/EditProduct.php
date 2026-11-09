@@ -12,6 +12,10 @@ class EditProduct extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [DeleteAction::make()];
+        return [
+            \Filament\Actions\Action::make('view')->label('Sitede gör')->icon('heroicon-o-arrow-top-right-on-square')->color('gray')
+                ->url(fn () => route('product', $this->record->slug), true),
+            DeleteAction::make(),
+        ];
     }
 }

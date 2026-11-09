@@ -114,6 +114,43 @@ class OrderService
         $order->log('Ödeme başarısız: '.$reason);
     }
 
+    /** Panelden durum değişikliği; istenirse müşteriye e-posta gider. İptalde stok iade edilir. */
+    public function changeStatus(Order $order, string $status, ?string $note, bool $notifyCustomer, ?string $tracking = null): void
+    {
+        $old = $order->status;
+        if ($status === 'cancelled' && $old !== 'cancelled') {
+            $this->restock($order);
+        }
+        $order->update(['status' => $status] + ($tracking !== null ? ['tracking_no' => $tracking] : []));
+        $msg = 'Durum: '.(Order::STATUSES[$old] ?? $old).' → '.(Order::STATUSES[$status] ?? $status)
+            .($tracking ? ' · Takip no: '.$tracking : '')
+            .($note ? ' · Not: '.$note : '')
+            .' ('.(auth()->user()?->name ?? 'sistem').')';
+        $order->log($msg);
+
+        if ($notifyCustomer) {
+            try {
+                Mail::to($order->email)->send(new \App\Mail\OrderStatusChanged($order, $note));
+                $order->log('Müşteriye durum e-postası gönderildi.');
+            } catch (\Throwable $e) {
+                Log::error('Durum e-postası gönderilemedi', ['order' => $order->number, 'e' => $e->getMessage()]);
+                $order->log('Durum e-postası gönderilemedi: '.Str::limit($e->getMessage(), 150));
+            }
+        }
+    }
+
+    private function restock(Order $order): void
+    {
+        DB::transaction(function () use ($order) {
+            foreach ($order->items as $item) {
+                $p = $item->product_id ? Product::whereKey($item->product_id)->lockForUpdate()->first() : null;
+                if ($p && $p->stock_qty !== null) {
+                    $p->update(['stock_qty' => $p->stock_qty + $item->quantity, 'in_stock' => true]);
+                }
+            }
+        });
+    }
+
     public function notify(Order $order): void
     {
         try {
