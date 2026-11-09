@@ -38,6 +38,10 @@ use UnitEnum;
 
 class ProductResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'catalog';
+
     protected static ?string $model = Product::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cube';
@@ -109,6 +113,7 @@ class ProductResource extends Resource
                     ])
                     ->helperText('İlk görsel kapak, ikincisi kartın üzerine gelince görünen görseldir.'),
             ]),
+            \App\Filament\Support\SeoFields::section(),
         ])->columns(3);
     }
 

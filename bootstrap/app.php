@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn () => route('account'));
         // Tiko sunucusu dönüş/bildirimde CSRF jetonu taşımaz.
         $middleware->validateCsrfTokens(except: ['tiko/donus/*', 'tiko/bildirim']);
+        $middleware->web(prepend: [\App\Http\Middleware\HandleRedirects::class]);
+        $middleware->web(append: [\App\Http\Middleware\ShopMaintenance::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

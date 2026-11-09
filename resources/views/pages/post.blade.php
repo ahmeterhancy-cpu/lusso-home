@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $post->title)
-@section('description', $post->excerpt)
+@section('title', $post->meta_title ?: $post->title)
+@section('description', $post->meta_description ?: $post->excerpt)
 @section('page_title')
     @include('partials.page-title', ['title' => $post->title, 'crumbs' => [['Blog', route('blog')], [$post->title, null]]])
 @endsection

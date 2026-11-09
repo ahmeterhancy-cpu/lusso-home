@@ -20,6 +20,10 @@ use UnitEnum;
 /** Mağaza ayarları: settings tablosundaki anahtar/değer kayıtları. */
 class ManageSettings extends Page implements HasSchemas
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'settings';
+
     use InteractsWithSchemas;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
@@ -35,14 +39,18 @@ class ManageSettings extends Page implements HasSchemas
     public ?array $data = [];
 
     /** Açık/kapalı anahtarlar ('1' / '0' olarak saklanır). */
-    private const BOOLS = ['pay_tiko', 'pay_havale', 'pay_kapida', 'tiko_test_mode'];
+    private const BOOLS = ['pay_tiko', 'pay_havale', 'pay_kapida', 'tiko_test_mode', 'maintenance'];
+
+    /** JSON olarak saklanan liste ayarları. */
+    private const JSONS = ['shipping_zones'];
 
     private const KEYS = [
         'site_name', 'meta_description', 'support_phone', 'whatsapp', 'email', 'order_email',
         'facebook', 'instagram', 'footer_contact', 'contact_text', 'map_embed', 'copyright_year',
-        'free_shipping_min', 'shipping_fee', 'shipping_text', 'per_page', 'home_grid_category',
+        'free_shipping_min', 'shipping_fee', 'shipping_text', 'shipping_zones', 'per_page',
         'pay_tiko', 'pay_havale', 'pay_kapida', 'bank_info',
         'tiko_merchant_id', 'tiko_secret_key', 'tiko_password', 'tiko_test_mode',
+        'maintenance', 'maintenance_title', 'maintenance_text', 'robots_txt', 'head_code',
     ];
 
     public function mount(): void
@@ -50,9 +58,26 @@ class ManageSettings extends Page implements HasSchemas
         $values = [];
         foreach (self::KEYS as $k) {
             $v = Setting::map()[$k] ?? null;
-            $values[$k] = in_array($k, self::BOOLS, true) ? $v === '1' : $v;
+            $values[$k] = match (true) {
+                in_array($k, self::BOOLS, true) => $v === '1',
+                in_array($k, self::JSONS, true) => array_values((array) json_decode((string) $v, true)),
+                default => $v,
+            };
         }
         $this->form->fill($values);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('cache')->label('Önbelleği temizle')->icon('heroicon-o-arrow-path')->color('gray')
+                ->requiresConfirmation()->modalDescription('Menü, kampanya, ayar ve sayfa önbellekleri temizlenir. Sitede bir değişiklik görünmüyorsa kullanın.')
+                ->action(function () {
+                    \Illuminate\Support\Facades\Cache::flush();
+                    \Illuminate\Support\Facades\Artisan::call('view:clear');
+                    Notification::make()->title('Önbellek temizlendi')->success()->send();
+                }),
+        ];
     }
 
     public function form(Schema $schema): Schema
@@ -80,8 +105,28 @@ class ManageSettings extends Page implements HasSchemas
                     TextInput::make('shipping_fee')->label('Kargo ücreti (₺)')->numeric()->helperText('0 = her zaman ücretsiz'),
                     Textarea::make('shipping_text')->label('Ürün sayfası "Kargo & Teslimat" sekmesi (HTML)')->rows(4)->columnSpanFull(),
                     TextInput::make('per_page')->label('Kategori sayfasında ürün sayısı')->numeric(),
-                    TextInput::make('home_grid_category')->label('Ana sayfa alt ızgara kategorisi (URL adı)')->helperText('Örn. sofra-grubu'),
+                    \Filament\Forms\Components\Repeater::make('shipping_zones')->label('Şehre göre kargo')->columnSpanFull()
+                        ->helperText('Tanımlanırsa kasadaki şehir listesi buradan gelir. Boş "ücretsiz kargo alt sınırı" = genel sınır geçerli.')
+                        ->schema([
+                            TextInput::make('city')->label('Şehir / bölge')->required(),
+                            TextInput::make('fee')->label('Kargo ücreti (₺)')->numeric()->minValue(0)->required(),
+                            TextInput::make('free_min')->label('Ücretsiz kargo alt sınırı (₺)')->numeric()->minValue(0),
+                        ])->columns(3)->reorderable()->defaultItems(0)->addActionLabel('Şehir ekle')
+                        ->itemLabel(fn (array $state) => $state['city'] ?? null),
                 ])->columns(2),
+                Tab::make('Bakım ve SEO')->icon('heroicon-o-wrench-screwdriver')->schema([
+                    Section::make('Bakım modu')->columns(2)->schema([
+                        Toggle::make('maintenance')->label('Siteyi bakım moduna al')->columnSpanFull()
+                            ->helperText('Ziyaretçiler bakım sayfasını görür. Siz (yönetici) siteyi normal görmeye devam edersiniz; ödeme bildirimleri çalışır.'),
+                        TextInput::make('maintenance_title')->label('Bakım başlığı')->placeholder('Kısa bir ara veriyoruz'),
+                        TextInput::make('maintenance_text')->label('Bakım metni')->placeholder('Sitemizi sizin için yeniliyoruz…'),
+                    ]),
+                    Textarea::make('robots_txt')->label('robots.txt')->rows(6)
+                        ->placeholder("User-agent: *\nDisallow: /admin\nDisallow: /cart\nDisallow: /checkout\nDisallow: /hesabim")
+                        ->helperText('Site haritası satırı otomatik eklenir.'),
+                    Textarea::make('head_code')->label('<head> içine eklenecek kod')->rows(5)
+                        ->helperText('Google Analytics, Meta Pixel, Search Console doğrulama gibi kodlar. Yalnız güvendiğiniz kodu yapıştırın.'),
+                ]),
                 Tab::make('Ödeme')->icon('heroicon-o-credit-card')->schema([
                     Section::make('Ödeme yöntemleri')->columns(3)->schema([
                         Toggle::make('pay_tiko')->label('Kartla ödeme (Tiko)'),
@@ -106,6 +151,9 @@ class ManageSettings extends Page implements HasSchemas
         $data = $this->form->getState();
         foreach (self::BOOLS as $b) {
             $data[$b] = ! empty($data[$b]) ? '1' : '0';
+        }
+        foreach (self::JSONS as $j) {
+            $data[$j] = json_encode(array_values((array) ($data[$j] ?? [])), JSON_UNESCAPED_UNICODE);
         }
         Setting::put($data);
         Notification::make()->title('Ayarlar kaydedildi')->success()->send();

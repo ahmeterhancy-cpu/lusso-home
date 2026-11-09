@@ -19,7 +19,7 @@ class PricingService
      * @param  Collection<int, array{product: \App\Models\Product, qty: int, price: float, total: float}>  $lines
      * @return array{subtotal: float, discounts: array<int, array{label: string, amount: float}>, discount: float, shipping: float, total: float, coupon: ?Coupon, coupon_error: ?string, free_shipping: bool}
      */
-    public function quote(Collection $lines, ?string $couponCode = null, ?string $email = null, ?int $userId = null): array
+    public function quote(Collection $lines, ?string $couponCode = null, ?string $email = null, ?int $userId = null, ?string $city = null): array
     {
         $subtotal = round((float) $lines->sum('total'), 2);
         $discounts = [];
@@ -58,7 +58,7 @@ class PricingService
         }
 
         $discount = min($subtotal, round(array_sum(array_column($discounts, 'amount')), 2));
-        $shipping = $this->shipping($subtotal, $freeShipping);
+        $shipping = $this->shipping($subtotal, $freeShipping, $city);
 
         return [
             'subtotal' => $subtotal,
@@ -72,15 +72,45 @@ class PricingService
         ];
     }
 
-    public function shipping(float $subtotal, bool $free = false): float
+    public function shipping(float $subtotal, bool $free = false, ?string $city = null): float
     {
         if ($subtotal <= 0 || $free) {
             return 0;
         }
-        $min = (float) setting('free_shipping_min', 5000);
-        $fee = (float) setting('shipping_fee', 0);
+        [$fee, $min] = $this->zone($city);
 
-        return $subtotal >= $min ? 0 : $fee;
+        return $min !== null && $subtotal >= $min ? 0 : $fee;
+    }
+
+    /** @return array{0: float, 1: ?float} şehrin kargo ücreti ve ücretsiz kargo alt sınırı */
+    public function zone(?string $city): array
+    {
+        $fee = (float) setting('shipping_fee', 0);
+        $min = (float) setting('free_shipping_min', 5000);
+        foreach ($this->zones() as $z) {
+            if ($city && mb_strtolower($z['city'], 'UTF-8') === mb_strtolower($city, 'UTF-8')) {
+                $fee = (float) ($z['fee'] ?? $fee);
+                if (($z['free_min'] ?? '') !== '' && $z['free_min'] !== null) {
+                    $min = (float) $z['free_min'];
+                }
+            }
+        }
+
+        return [$fee, $min > 0 ? $min : null];
+    }
+
+    /** Panelde tanımlı şehir bazlı kargo listesi. */
+    public function zones(): array
+    {
+        return array_values(array_filter((array) json_decode((string) setting('shipping_zones', '[]'), true), fn ($z) => ! empty($z['city'])));
+    }
+
+    /** Kasadaki şehir listesi: tanımlı bölgeler, yoksa KKTC ilçeleri. */
+    public function cities(): array
+    {
+        $zones = array_column($this->zones(), 'city');
+
+        return $zones ?: ['Lefkoşa', 'Girne', 'Gazimağusa', 'Güzelyurt', 'İskele', 'Lefke'];
     }
 
     /** @return array{0: ?Coupon, 1: ?string, 2: float, 3: bool} */

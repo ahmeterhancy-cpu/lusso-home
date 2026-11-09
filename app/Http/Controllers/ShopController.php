@@ -25,15 +25,15 @@ class ShopController extends Controller
             return redirect()->route('search', ['s' => $request->query('s')]);
         }
 
-        $latest = Product::visible()->with(['images', 'categories:id'])->latest('published_at')->take(8)->get();
-        $featured = Product::visible()->with(['images', 'categories:id'])->where('is_featured', true)->orderBy('sort')->latest('published_at')->take(12)->get();
+        $latest = Product::visible()->with(['images', 'categories:id'])->latest('published_at')->take((int) site('latest_count', 8))->get();
+        $featured = Product::visible()->with(['images', 'categories:id'])->where('is_featured', true)->orderBy('sort')->latest('published_at')->take((int) site('featured_count', 12))->get();
         if ($featured->isEmpty()) {
-            $featured = Product::visible()->with(['images', 'categories:id'])->whereHas('categories', fn ($q) => $q->where('slug', 'mackenzie-childs'))->latest('published_at')->take(12)->get();
+            $featured = Product::visible()->with(['images', 'categories:id'])->whereHas('categories', fn ($q) => $q->where('slug', 'mackenzie-childs'))->latest('published_at')->take((int) site('featured_count', 12))->get();
         }
         $trend = Category::active()->where('is_trend', true)->orderBy('trend_sort')->get();
         $tableware = Category::where('slug', setting('home_grid_category', 'sofra-grubu'))->first();
         $tablewareProducts = $tableware
-            ? $this->inCategory($tableware)->with(['images', 'categories:id'])->where('price', '>', 0)->latest('published_at')->take(12)->get()
+            ? $this->inCategory($tableware)->with(['images', 'categories:id'])->where('price', '>', 0)->latest('published_at')->take((int) site('grid_count', 12))->get()
             : collect();
 
         return view('shop.home', [

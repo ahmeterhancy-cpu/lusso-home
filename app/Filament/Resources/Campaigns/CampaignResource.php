@@ -23,6 +23,10 @@ use UnitEnum;
 
 class CampaignResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'marketing';
+
     protected static ?string $model = Campaign::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-megaphone';

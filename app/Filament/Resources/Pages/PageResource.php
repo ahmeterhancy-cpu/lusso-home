@@ -19,6 +19,10 @@ use UnitEnum;
 
 class PageResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'content';
+
     protected static ?string $model = Page::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
@@ -37,6 +41,7 @@ class PageResource extends Resource
                 ->helperText('Sadece küçük harf, rakam ve tire.'),
             RichEditor::make('content')->label('İçerik')->columnSpanFull(),
             Toggle::make('is_active')->label('Yayında')->default(true),
+            \App\Filament\Support\SeoFields::section(),
         ])->columns(2);
     }
 

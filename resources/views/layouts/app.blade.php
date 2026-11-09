@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=lato:300,400,400i,700,700i,900&display=swap">
     <link rel="stylesheet" href="{{ asset('css/lusso.css') }}?v={{ filemtime(public_path('css/lusso.css')) }}">
     @stack('head')
+    {!! setting('head_code') !!}
 </head>
 <body class="@yield('body_class')">
 <div class="website-wrapper">
@@ -31,10 +32,9 @@
                 <div class="campaign-banner">{{ $banner }}</div>
             @endif
             <ul class="topbar-menu">
-                <li><a href="{{ route('home') }}">Ana Sayfa</a></li>
-                <li><a href="{{ route('account') }}">Hesabım</a></li>
-                <li><a href="{{ route('blog') }}">Blog</a></li>
-                <li><a href="{{ route('cart') }}">Sepetim</a></li>
+                @foreach (site('topbar_links', []) as $l)
+                    <li><a href="{{ url($l['url'] ?? '/') }}">{{ $l['label'] }}</a></li>
+                @endforeach
             </ul>
         </div>
     </div>
@@ -44,9 +44,9 @@
             <div>
                 <button class="mobile-toggle" type="button" data-open-menu aria-label="Menü">{{ icon('menu') }}</button>
                 <div class="header-text">
-                    <strong>Evinizi küçük dokunuşlarla daha güzel,</strong>
-                    <strong>daha şık ve daha lükse ulaştırın…</strong>
-                    #MyLussoLife
+                    @foreach (array_values(array_filter(site('header_lines', []))) as $i => $line)
+                        @if ($i < 2)<strong>{{ $line }}</strong>@else{{ $line }}@endif
+                    @endforeach
                 </div>
             </div>
             <div class="site-logo">
@@ -88,42 +88,26 @@
     <footer class="footer">
         <div class="footer-logo"><a href="{{ route('home') }}"><img src="{{ asset('img/logo.png') }}" alt="Lusso Home Concept" loading="lazy"></a></div>
         <div class="footer-cols">
-            <div>
-                <h5 class="widget-title">Hızlı Linkler</h5>
-                <ul>
-                    <li><a href="{{ route('home') }}">Ana Sayfa</a></li>
-                    <li><a href="{{ route('page', 'hakkimizda') }}">Hakkımızda</a></li>
-                    <li><a href="{{ route('contact') }}">İletişim</a></li>
-                    <li><a href="{{ route('account', ['action' => 'register']) }}">Üye Ol</a></li>
-                    <li><a href="{{ route('account') }}">Giriş Yap!</a></li>
-                    <li><a href="{{ route('track') }}">Sipariş Takibi</a></li>
-                </ul>
-            </div>
-            <div>
-                <h5 class="widget-title">Kurallar</h5>
-                <ul>
-                    <li><a href="{{ route('page', 'uyelik') }}">Üyelik</a></li>
-                    <li><a href="{{ route('page', 'alisveris') }}">Alışveriş</a></li>
-                    <li><a href="{{ route('page', 'teslimat-kargo') }}">Teslimat</a></li>
-                    <li><a href="{{ route('page', 'iade-politikasi') }}">İade Politikası</a></li>
-                    <li><a href="{{ route('page', 'guvenli-alisveris') }}">Güvenli Alışveriş</a></li>
-                    <li><a href="{{ route('page', 'gizlilik-sozlesmesi') }}">Gizlilik Sözleşmesi</a></li>
-                </ul>
-            </div>
-            <div>
-                <h5 class="widget-title">Kategoriler</h5>
-                <ul>
-                    @foreach (['aksesuar' => 'Aksesuar', 'kitap' => 'Kitap', 'mackenzie-childs' => 'Mackenzie Childs', 'sofra-grubu' => 'Sofra Grubu', 'tekstil' => 'Tekstil'] as $slug => $name)
-                        <li><a href="{{ route('category', $slug) }}">{{ $name }}</a></li>
-                    @endforeach
-                </ul>
-            </div>
+            @foreach (site('footer_columns', []) as $col)
+                <div>
+                    <h5 class="widget-title">{{ $col['title'] }}</h5>
+                    <ul>
+                        @foreach ($col['links'] ?? [] as $l)
+                            <li><a href="{{ url($l['url'] ?? '/') }}">{{ $l['label'] }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endforeach
             <div class="contact">
-                <h5 class="widget-title">İletşim</h5>
+                <h5 class="widget-title">{{ site('contact_title') }}</h5>
                 {!! setting('footer_contact', '<p>Şube 1: Neopark no 6, şht Orhan Durusoy sokak, Girne (Eziç Premierin karşısında)<br>Tel: 0392 815 82 83</p><p class="gap">Şube 2 : Merit Royal Diamond Hotel<br>Tel: 0539 109 99 00</p><p>Şube 3 : The Arkın Iskele Hotel<br>Tel: 0539 109 99 00<br>E-Mail:info@lussohomeconcept.com</p>') !!}
             </div>
         </div>
-        <div class="copyrights">© {{ setting('copyright_year', '2021') }} Lusso Home Concept. All rights reserved Web Site By <a href="https://amesis.com.tr" target="_blank" rel="noopener">Amesis Dijital Ajans</a></div>
+        <div class="copyrights">{{ \App\Support\SiteContent::text(site('copyright')) }}
+            @if (site('credit'))
+                @if (site('credit_url'))<a href="{{ site('credit_url') }}" target="_blank" rel="noopener">{{ site('credit') }}</a>@else{{ site('credit') }}@endif
+            @endif
+        </div>
     </footer>
 </div>
 

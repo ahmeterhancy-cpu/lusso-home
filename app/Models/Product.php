@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
+    use \App\Concerns\LogsActivity;
+
     protected $guarded = [];
 
     protected $casts = [

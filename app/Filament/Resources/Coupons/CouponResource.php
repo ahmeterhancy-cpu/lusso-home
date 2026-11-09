@@ -31,6 +31,10 @@ use UnitEnum;
 
 class CouponResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'marketing';
+
     protected static ?string $model = Coupon::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-ticket';

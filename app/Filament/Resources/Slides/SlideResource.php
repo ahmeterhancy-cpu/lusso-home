@@ -19,6 +19,10 @@ use UnitEnum;
 
 class SlideResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'content';
+
     protected static ?string $model = Slide::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-photo';

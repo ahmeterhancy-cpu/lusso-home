@@ -70,6 +70,14 @@ if (! function_exists('icon')) {
     }
 }
 
+if (! function_exists('site')) {
+    /** Panelden düzenlenen site içeriği (App\Support\SiteContent). */
+    function site(string $key, mixed $default = null): mixed
+    {
+        return \App\Support\SiteContent::get($key, $default);
+    }
+}
+
 if (! function_exists('money')) {
     /** Eski sitedeki biçim: "1900 ₺" (binlik ayırıcı yok, kuruş yalnız varsa). */
     function money(float|int|string|null $value): string

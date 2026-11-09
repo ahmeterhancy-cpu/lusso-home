@@ -23,6 +23,10 @@ use UnitEnum;
 
 class PostResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'content';
+
     protected static ?string $model = Post::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-newspaper';
@@ -44,6 +48,7 @@ class PostResource extends Resource
             RichEditor::make('content')->label('İçerik')->columnSpanFull(),
             DateTimePicker::make('published_at')->label('Yayın tarihi')->default(now()),
             Toggle::make('is_active')->label('Yayında')->default(true),
+            \App\Filament\Support\SeoFields::section(),
         ])->columns(2);
     }
 

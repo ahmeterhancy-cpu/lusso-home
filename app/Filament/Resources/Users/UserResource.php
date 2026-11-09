@@ -25,6 +25,10 @@ use UnitEnum;
 
 class UserResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'sales';
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
@@ -49,8 +53,18 @@ class UserResource extends Resource
                 ->dehydrated(fn ($state) => filled($state))->dehydrateStateUsing(fn ($state) => Hash::make($state))
                 ->required(fn (string $operation) => $operation === 'create')
                 ->helperText('Değiştirmeyecekseniz boş bırakın.'),
-            Toggle::make('is_admin')->label('Yönetim paneline erişebilir')
-                ->disabled(fn ($record) => $record?->is(auth()->user())),
+            \Filament\Schemas\Components\Section::make('Personel yetkisi')->columnSpanFull()->columns(2)
+                ->visible(fn () => auth()->user()?->canArea('settings'))
+                ->description('Panele girebilen çalışanlar. Rol, hangi bölümleri görebileceğini belirler.')
+                ->schema([
+                    Toggle::make('is_admin')->label('Yönetim paneline erişebilir')->live()
+                        ->disabled(fn ($record) => $record?->is(auth()->user())),
+                    \Filament\Forms\Components\Select::make('role')->label('Rol')
+                        ->options(collect(User::ROLES)->map(fn ($r) => $r['label'])->all())->default('orders')->live()
+                        ->visible(fn ($get) => (bool) $get('is_admin'))
+                        ->disabled(fn ($record) => $record?->is(auth()->user()))
+                        ->helperText(fn ($state) => $state ? 'Erişim: '.collect(User::ROLES[$state]['areas'] ?? [])->map(fn ($a) => $a === '*' ? 'her şey' : (User::AREAS[$a] ?? $a))->join(' · ') : null),
+                ]),
         ])->columns(2);
     }
 
@@ -67,7 +81,8 @@ class UserResource extends Resource
                 TextColumn::make('orders_count')->label('Sipariş')->sortable(),
                 TextColumn::make('spent')->label('Toplam harcama')->formatStateUsing(fn ($state) => money($state ?? 0))->sortable(),
                 TextColumn::make('last_order_at')->label('Son sipariş')->since()->placeholder('—')->sortable(),
-                IconColumn::make('is_admin')->label('Yönetici')->boolean()->toggleable(),
+                TextColumn::make('role')->label('Personel')->badge()->color('primary')->placeholder('Müşteri')->toggleable()
+                    ->state(fn (User $record) => $record->roleKey() ? User::ROLES[$record->roleKey()]['label'] : null),
                 TextColumn::make('created_at')->label('Kayıt')->date('d.m.Y')->sortable()->toggleable(),
             ])
             ->filters([

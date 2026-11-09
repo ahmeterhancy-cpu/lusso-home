@@ -26,9 +26,14 @@ class CheckoutController extends Controller
             return redirect()->route('cart')->with('error', $q['coupon_error'].' Kupon sepetten kaldırıldı.');
         }
 
+        // Her şehir için kargo ücreti (şehir seçilince toplam sayfada anında güncellenir).
+        $pricing = app(\App\Services\PricingService::class);
+        $cities = collect($pricing->cities())->mapWithKeys(fn ($c) => [$c => $pricing->shipping($q['subtotal'], $q['free_shipping'], $c)])->all();
+
         return view('shop.checkout', [
             'lines' => $q['lines'],
             'q' => $q,
+            'cities' => $cities,
             'methods' => $this->methods(),
             'user' => auth()->user(),
         ]);
@@ -59,7 +64,7 @@ class CheckoutController extends Controller
             'email' => 'required|email|max:150',
             'phone' => 'required|string|max:40',
             'address' => 'required|string|max:250',
-            'city' => 'required|string|max:80',
+            'city' => ['required', 'string', 'max:80', \Illuminate\Validation\Rule::in(app(\App\Services\PricingService::class)->cities())],
             'note' => 'nullable|string|max:1000',
             'payment_method' => 'required|in:'.implode(',', array_keys($methods)),
             'terms' => 'accepted',

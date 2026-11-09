@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Sunucuda tek bir cron yeterli:  * * * * * php /yol/artisan schedule:run
+// Drive senkronu her 5 dakikada kontrol eder; asıl aralık paneldeki ayardır.
+Schedule::command('urun:senkron')->everyFiveMinutes()->withoutOverlapping(30);

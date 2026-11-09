@@ -1,8 +1,11 @@
 @extends('layouts.app')
 
-@section('title', $title)
-@if ($category && $category->description)
-    @section('description', \Illuminate\Support\Str::limit(strip_tags($category->description), 155))
+@section('title', $category?->meta_title ?: $title)
+@if ($category && ($category->meta_description || $category->description))
+    @section('description', $category->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($category->description), 155))
+@endif
+@if (request('page') > 1 || request()->hasAny(['orderby', 'min', 'max']))
+    @push('head')<meta name="robots" content="noindex, follow">@endpush
 @endif
 
 @section('page_title')

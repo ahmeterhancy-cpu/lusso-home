@@ -24,6 +24,10 @@ use UnitEnum;
 
 class CategoryResource extends Resource
 {
+    use \App\Filament\Support\RestrictedArea;
+
+    protected static string $area = 'catalog';
+
     protected static ?string $model = Category::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
@@ -58,6 +62,7 @@ class CategoryResource extends Resource
                     TextInput::make('trend_sort')->label('Trend sırası')->numeric()->default(0),
                 ]),
             ]),
+            \App\Filament\Support\SeoFields::section(),
         ]);
     }
 

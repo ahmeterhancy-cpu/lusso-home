@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', $product->name)
+@section('title', $product->meta_title ?: $product->name)
 @section('body_class', 'single-product')
-@section('description', \Illuminate\Support\Str::limit(trim(strip_tags($product->short_description ?: $product->description)), 155))
+@section('description', $product->meta_description ?: \Illuminate\Support\Str::limit(trim(strip_tags($product->short_description ?: $product->description)), 155))
 @section('og')
     <meta property="og:type" content="product">
     <meta property="og:title" content="{{ $product->name }}">

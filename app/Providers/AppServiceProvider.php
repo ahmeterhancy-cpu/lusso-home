@@ -32,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
                 ->map(fn ($c) => ['name' => $c->name, 'url' => $c->url(), 'children' => $c->children->map(fn ($ch) => ['name' => $ch->name, 'url' => $ch->url()])->all()])
                 ->all());
 
+            // Panelden eklenen özel menü bağlantıları (kategori ağacının sonuna).
+            foreach ((array) site('menu_extra', []) as $extra) {
+                if (! empty($extra['label'])) {
+                    $menu[] = ['name' => $extra['label'], 'url' => url($extra['url'] ?? '/'), 'children' => []];
+                }
+            }
+
             $cart = app(CartService::class);
             $view->with([
                 'menu' => $menu,

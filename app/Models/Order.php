@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
+    use \App\Concerns\LogsActivity;
+
     protected $guarded = [];
 
     protected $casts = ['paid_at' => 'datetime', 'subtotal' => 'decimal:2', 'discount' => 'decimal:2', 'shipping' => 'decimal:2', 'total' => 'decimal:2', 'discount_lines' => 'array'];
@@ -26,6 +28,9 @@ class Order extends Model
         'havale' => 'Havale / EFT',
         'kapida' => 'Kapıda Ödeme',
     ];
+
+    /** Yalnız panelden girilen siparişlerde kullanılan ek yöntem. */
+    public const PANEL_METHODS = ['magaza' => 'Mağazada ödendi'];
 
     public function items(): HasMany
     {
@@ -49,7 +54,7 @@ class Order extends Model
 
     public function methodLabel(): string
     {
-        return self::METHODS[$this->payment_method] ?? $this->payment_method;
+        return (self::METHODS + self::PANEL_METHODS)[$this->payment_method] ?? $this->payment_method;
     }
 
     public function log(string $message, array $data = []): void

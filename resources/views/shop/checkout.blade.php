@@ -23,10 +23,10 @@
                 <div class="form-row"><label for="email">E-posta adresi <span class="req">*</span></label><input id="email" type="email" name="email" value="{{ old('email', $user?->email) }}" required autocomplete="email"></div>
                 <div class="form-row full"><label for="address">Adres <span class="req">*</span></label><input id="address" type="text" name="address" value="{{ old('address', $user?->address) }}" required autocomplete="street-address" placeholder="Mahalle, sokak, bina ve daire no"></div>
                 <div class="form-row full"><label for="city">Şehir / Bölge <span class="req">*</span></label>
-                    <select id="city" name="city" required>
+                    <select id="city" name="city" required data-city-select data-base="{{ $q['subtotal'] - $q['discount'] }}">
                         <option value="">Seçin…</option>
-                        @foreach (['Lefkoşa', 'Girne', 'Gazimağusa', 'Güzelyurt', 'İskele', 'Lefke'] as $c)
-                            <option value="{{ $c }}" @selected(old('city', $user?->city) === $c)>{{ $c }}</option>
+                        @foreach ($cities as $c => $ship)
+                            <option value="{{ $c }}" data-ship="{{ $ship }}" @selected(old('city', $user?->city) === $c)>{{ $c }}</option>
                         @endforeach
                     </select>
                 </div>

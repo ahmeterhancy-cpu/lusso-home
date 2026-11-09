@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Cache;
 
 class Campaign extends Model
 {
+    use \App\Concerns\LogsActivity;
+
     protected $guarded = [];
 
     protected $casts = [

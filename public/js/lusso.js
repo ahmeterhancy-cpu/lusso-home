@@ -205,6 +205,24 @@
     cn.form.addEventListener('submit', function () { cn.value = cn.value.replace(/\s/g, ''); });
   }
 
+  /* ---- kasa: şehre göre kargo ---- */
+  var citySel = $('[data-city-select]');
+  if (citySel) {
+    var fmt = function (v) {
+      return (Math.round(v * 100) % 100 === 0 ? String(Math.round(v)) : v.toFixed(2).replace('.', ',')) + ' ₺';
+    };
+    var updateShip = function () {
+      var opt = citySel.options[citySel.selectedIndex];
+      if (!opt || !opt.value) return;
+      var ship = parseFloat(opt.getAttribute('data-ship') || '0');
+      var base = parseFloat(citySel.getAttribute('data-base') || '0');
+      $$('[data-ship-text]').forEach(function (e) { e.textContent = ship > 0 ? fmt(ship) : 'Ücretsiz'; });
+      $$('[data-total-text]').forEach(function (e) { e.textContent = fmt(base + ship); });
+    };
+    citySel.addEventListener('change', updateShip);
+    updateShip();
+  }
+
   /* ---- çerez çubuğu ---- */
   var cookie = $('[data-cookie]');
   try {

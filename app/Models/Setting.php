@@ -29,5 +29,7 @@ class Setting extends Model
             self::updateOrCreate(['key' => $k], ['value' => is_array($v) ? json_encode($v) : $v]);
         }
         Cache::forget('settings');
+        \App\Support\SiteContent::flush();
+        \App\Models\ActivityLog::record('custom', null, 'Ayarlar güncellendi: '.implode(', ', array_slice(array_keys($values), 0, 8)).(count($values) > 8 ? '…' : ''));
     }
 }

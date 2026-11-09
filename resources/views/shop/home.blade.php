@@ -3,10 +3,11 @@
 @section('body_class', 'home')
 
 @section('content')
+@php($S = \App\Support\SiteContent::class)
 <div class="container main-page" style="padding-top:0">
 
     {{-- Slider: yazı yarısı + görsel yarısı, sırayla yer değiştirir --}}
-    @if ($slides->isNotEmpty())
+    @if ($S::show('slider') && $slides->isNotEmpty())
         <section class="hero" data-hero>
             @foreach ($slides as $i => $slide)
                 <div @class(['slide', 'active' => $i === 0, 'reverse' => $i % 2 === 1])>
@@ -30,15 +31,17 @@
         </section>
     @endif
 
-    <section class="image-trio">
-        @foreach ([['img/banner-1.jpg', setting('banner1_link', route('category', 'mackenzie-childs'))], ['img/banner-2.jpg', setting('banner2_link', route('category', 'sofra-grubu'))], ['img/banner-3.jpg', setting('banner3_link', route('category', 'aksesuar'))]] as [$img, $link])
-            <a href="{{ $link }}"><img src="{{ asset($img) }}" alt="Lusso Home Concept" width="670" height="670"></a>
-        @endforeach
-    </section>
+    @if ($S::show('trio'))
+        <section class="image-trio">
+            @foreach (site('trio', []) as $block)
+                <a href="{{ $block['link'] ?: route('shop') }}"><img src="{{ $S::image($block) }}" alt="Lusso Home Concept" width="670" height="670"></a>
+            @endforeach
+        </section>
+    @endif
 
-    @if ($trend->isNotEmpty())
+    @if ($S::show('trend') && $trend->isNotEmpty())
         <section class="home-section">
-            @include('partials.section-title', ['title' => 'Trend Kategoriler'])
+            @include('partials.section-title', ['title' => site('trend_title')])
             <div class="carousel" data-carousel style="--per:5;--per-md:3">
                 <div class="carousel-track">
                     @foreach ($trend as $cat)
@@ -53,27 +56,31 @@
         </section>
     @endif
 
-    <section class="home-section">
-        @include('partials.section-title', ['title' => 'Son Eklenen Ürünler', 'bordered' => true])
-        <div class="products-grid">
-            @foreach ($latest as $product)
-                @include('partials.product-card')
-            @endforeach
-        </div>
-        <div class="more-wrap"><a href="{{ route('shop') }}" class="btn btn-bordered">Daha Fazla Ürün</a></div>
-    </section>
+    @if ($S::show('latest') && $latest->isNotEmpty())
+        <section class="home-section">
+            @include('partials.section-title', ['title' => site('latest_title'), 'bordered' => true])
+            <div class="products-grid">
+                @foreach ($latest as $product)
+                    @include('partials.product-card')
+                @endforeach
+            </div>
+            <div class="more-wrap"><a href="{{ route('shop') }}" class="btn btn-bordered">Daha Fazla Ürün</a></div>
+        </section>
+    @endif
 </div>
 
-<section class="info-boxes">
-    <div class="info-box"><div class="ic">{{ icon('truck') }}</div><h3>Ücretsiz Kargo</h3><p>{{ setting('free_shipping_min', 5000) }} TL ve üzeri alışverişlerinizde kargo bedava.</p></div>
-    <div class="info-box"><div class="ic">{{ icon('diamond') }}</div><h3>Mükemmel Ürünler</h3><p>#MyLussoLife</p></div>
-    <div class="info-box"><div class="ic">{{ icon('magic') }}</div><h3>Evinizin Modası</h3><p>Lusso Home Concept</p></div>
-</section>
+@if ($S::show('info'))
+    <section class="info-boxes">
+        @foreach (site('info', []) as $box)
+            <div class="info-box"><div class="ic">{{ icon($box['icon'] ?? 'check') }}</div><h3>{{ $box['title'] }}</h3><p>{{ $S::text($box['text'] ?? '') }}</p></div>
+        @endforeach
+    </section>
+@endif
 
 <div class="container">
-    @if ($featured->isNotEmpty())
+    @if ($S::show('featured') && $featured->isNotEmpty())
         <section class="home-section">
-            @include('partials.section-title', ['title' => 'Öne Çıkan Ürünler'])
+            @include('partials.section-title', ['title' => site('featured_title')])
             <div class="carousel" data-carousel style="--per:6;--per-md:3">
                 <div class="carousel-track">
                     @foreach ($featured as $product)
@@ -87,23 +94,28 @@
         </section>
     @endif
 
-    <section class="promo-row">
-        <a href="{{ route('shop') }}" class="promo-img"><img src="{{ asset('img/promo.jpg') }}" alt="Evinizin tercihi" loading="lazy"></a>
-        <div class="promo-text">
-            <h5>EVİNİZİN MODASINI YAKINDAN TAKİP EDİN</h5>
-            <h1>EVİNİZİN TERCİHİ</h1>
-            <p>Trend modellerimizi görmek için</p>
-            <a href="{{ route('shop') }}" class="link-btn">Koleksiyonumuzu İnceleyin.</a>
-        </div>
-    </section>
+    @if ($S::show('promo'))
+        @php($promo = site('promo'))
+        <section class="promo-row">
+            <a href="{{ $promo['link'] ?: route('shop') }}" class="promo-img"><img src="{{ $S::image($promo) }}" alt="{{ $promo['title'] }}" loading="lazy"></a>
+            <div class="promo-text">
+                @if ($promo['kicker'])<h5>{{ $promo['kicker'] }}</h5>@endif
+                @if ($promo['title'])<h1>{{ $promo['title'] }}</h1>@endif
+                @if ($promo['text'])<p>{{ $promo['text'] }}</p>@endif
+                @if ($promo['button'])<a href="{{ $promo['link'] ?: route('shop') }}" class="link-btn">{{ $promo['button'] }}</a>@endif
+            </div>
+        </section>
+    @endif
 
-    <section class="gold-strip">
-        <h5>{{ icon('truck') }} Hızlı teslimat</h5>
-        <h5>{{ icon('support') }} Destek Paneli</h5>
-        <h5>{{ icon('card') }} Güvenli Ödeme</h5>
-    </section>
+    @if ($S::show('strip'))
+        <section class="gold-strip">
+            @foreach (site('strip', []) as $item)
+                <h5>{{ icon($item['icon'] ?? 'check') }} {{ $item['text'] }}</h5>
+            @endforeach
+        </section>
+    @endif
 
-    @if ($tableware && $tablewareProducts->isNotEmpty())
+    @if ($S::show('grid') && $tableware && $tablewareProducts->isNotEmpty())
         <section class="home-section" style="margin-bottom:80px">
             @include('partials.section-title', ['title' => $tableware->name, 'bordered' => true])
             <div class="products-grid">

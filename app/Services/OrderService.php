@@ -44,7 +44,7 @@ class OrderService
             }
 
             // Tutar, müşterinin sepette gördüğü hesapla aynı servisle hesaplanır.
-            $q = app(PricingService::class)->quote($lines, $couponCode, $data['email'], $userId);
+            $q = app(PricingService::class)->quote($lines, $couponCode, $data['email'], $userId, $data['city'] ?? null);
             if ($couponCode && ! $q['coupon']) {
                 throw new RuntimeException(($q['coupon_error'] ?? 'Kupon geçersiz.').' Kuponu kaldırıp tekrar deneyin.');
             }
@@ -102,6 +102,61 @@ class OrderService
         }
 
         return $order;
+    }
+
+    /**
+     * Panelden elle sipariş (telefon, mağaza, WhatsApp). Stok düşer; fiyatlar formda
+     * değiştirilebilir. $data['items'] = [['product_id' => .., 'quantity' => .., 'price' => ..], ...]
+     */
+    public function createManual(array $data): Order
+    {
+        return DB::transaction(function () use ($data) {
+            $items = [];
+            $subtotal = 0.0;
+            foreach ($data['items'] as $row) {
+                $p = Product::whereKey($row['product_id'])->lockForUpdate()->firstOrFail();
+                $qty = max(1, (int) $row['quantity']);
+                if ($p->stock_qty !== null) {
+                    if ($p->stock_qty < $qty) {
+                        throw new RuntimeException("“{$p->name}” için yeterli stok yok (kalan: {$p->stock_qty}).");
+                    }
+                    $p->stock_qty -= $qty;
+                    $p->in_stock = $p->stock_qty > 0;
+                    $p->save();
+                }
+                $price = (float) ($row['price'] ?? $p->finalPrice());
+                $items[] = ['product_id' => $p->id, 'name' => $p->name, 'sku' => $p->sku, 'price' => $price, 'quantity' => $qty, 'total' => $price * $qty];
+                $subtotal += $price * $qty;
+            }
+            $discount = min($subtotal, max(0, (float) ($data['discount'] ?? 0)));
+            $shipping = max(0, (float) ($data['shipping'] ?? 0));
+            $paid = ! empty($data['paid']);
+
+            $order = Order::create([
+                'number' => $this->newNumber(),
+                'source' => 'panel',
+                'user_id' => $data['user_id'] ?? null,
+                'status' => $data['status'] ?? ($paid ? 'processing' : 'pending'),
+                'payment_method' => $data['payment_method'],
+                'payment_status' => $paid ? 'paid' : 'unpaid',
+                'paid_at' => $paid ? now() : null,
+                'payment_ref' => $paid ? 'panel' : null,
+                'first_name' => $data['first_name'], 'last_name' => $data['last_name'],
+                'email' => $data['email'] ?: 'magaza@lussohomeconcept.com', 'phone' => $data['phone'],
+                'address' => $data['address'] ?: 'Mağazadan teslim', 'city' => $data['city'] ?: 'Girne',
+                'note' => $data['note'] ?? null, 'admin_note' => $data['admin_note'] ?? null,
+                'subtotal' => $subtotal, 'discount' => $discount,
+                'discount_lines' => $discount > 0 ? [['label' => 'Mağaza indirimi', 'amount' => $discount]] : null,
+                'shipping' => $shipping, 'total' => $subtotal - $discount + $shipping,
+                'track_token' => Str::random(32),
+            ]);
+            foreach ($items as $it) {
+                $order->items()->create($it);
+            }
+            $order->log('Sipariş panelden oluşturuldu ('.(auth()->user()?->name ?? 'yönetici').').');
+
+            return $order;
+        });
     }
 
     public function markPaid(Order $order, string $ref, string $note): void

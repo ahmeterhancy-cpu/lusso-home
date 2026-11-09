@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Coupon extends Model
 {
+    use \App\Concerns\LogsActivity;
+
     protected $guarded = [];
 
     protected $casts = [
