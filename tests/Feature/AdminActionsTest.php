@@ -44,7 +44,7 @@ class AdminActionsTest extends TestCase
     public function test_dashboard_and_order_view_render_with_data(): void
     {
         $o = $this->order(['payment_status' => 'paid', 'paid_at' => now()]);
-        $this->get('/admin')->assertOk()->assertSee('Kokpit');
+        $this->get('/admin')->assertOk()->assertSee('Yönetim Paneli');
         // Bileşenler tembel yüklenir; her birini ayrıca çiz.
         foreach ([\App\Filament\Widgets\ShopStats::class, \App\Filament\Widgets\SalesChart::class, \App\Filament\Widgets\PaymentMethodsChart::class,
             \App\Filament\Widgets\Attention::class, \App\Filament\Widgets\LatestOrders::class, \App\Filament\Widgets\TopProducts::class] as $w) {

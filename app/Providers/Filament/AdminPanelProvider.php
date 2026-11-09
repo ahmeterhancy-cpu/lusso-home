@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Lusso Home Concept')
             ->brandLogo(asset('img/logo-acik.png'))
             ->darkModeBrandLogo(asset('img/logo-acik.png'))
-            ->brandLogoHeight('2.4rem')
+            ->brandLogoHeight('1.9rem')
             ->favicon(asset('img/favicon.png'))
             // Yalnız açık tema. (Tarayıcıda eskiden kalan "koyu" tercihi de böylece yok sayılır.)
             ->darkMode(false)
@@ -49,6 +49,9 @@ class AdminPanelProvider extends PanelProvider
                 'danger' => Color::Rose,
             ])
             ->sidebarCollapsibleOnDesktop()
+            // WordPress'teki gibi dar yan menü (varsayılan 20rem çok genişti).
+            ->sidebarWidth('13.5rem')
+            ->collapsedSidebarWidth('3.6rem')
             ->maxContentWidth('full')
             ->globalSearchKeyBindings(['ctrl+k', 'command+k'])
             ->databaseNotifications(false)
