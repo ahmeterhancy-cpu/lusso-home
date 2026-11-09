@@ -7,35 +7,53 @@
 @php($lines = array_values(array_filter(site('header_lines', []), fn ($l) => $l && ! str_starts_with(trim($l), '#'))))
 @php($trio = site('trio', []))
 
-{{-- Giriş: solda markanın kendi cümlesi, sağda slayt görselleri mozaik olarak --}}
+{{-- Giriş: büyük yuvarlak slayt; marka cümlesi beyaz kartta sabit, arkada görseller döner.
+     JS kapalıyken ilk görsel görünür kalır. --}}
 @if ($S::show('slider'))
     <section class="hm-hero">
-        <div class="wrap hm-hero-in">
-            <div class="hm-hero-text">
-                <p class="eyebrow" @if (str_starts_with((string) site('subtitle'), '#')) lang="en" @endif>{{ site('subtitle') }}</p>
-                <h1 class="serif">{{ $lines ? implode(' ', $lines) : 'Evinizi küçük dokunuşlarla daha güzel, daha şık ve daha lükse ulaştırın.' }}</h1>
-                <div class="hm-hero-cta">
-                    <a href="{{ route('shop') }}" class="mbtn mbtn-dark">Mağazayı keşfet {{ icon('arrow-right') }}</a>
-                    @if (! empty($trio[0]['link']) && ($trioNames[0] ?? null))
-                        <a href="{{ url($trio[0]['link']) }}" class="mbtn mbtn-line">{{ $trioNames[0] }}</a>
-                    @endif
-                </div>
-                @if ($S::show('strip'))
-                    <ul class="hm-trust">
-                        @foreach (site('strip', []) as $item)
-                            <li>{{ icon($item['icon'] ?? 'check') }} {{ $item['text'] }}</li>
-                        @endforeach
-                    </ul>
-                @endif
-            </div>
-            @if ($slides->isNotEmpty())
-                <div @class(['hm-mosaic', 'n'.min(3, $slides->count())])>
-                    @foreach ($slides->take(3) as $i => $slide)
-                        <a href="{{ $slide->link ?: route('shop') }}" class="m{{ $i + 1 }}">
+        <div class="wrap">
+            <div class="hs" data-hero>
+                <div class="hs-slides" data-hs-stage>
+                    @forelse ($slides as $i => $slide)
+                        <a href="{{ $slide->link ?: route('shop') }}" @class(['hs-slide', 'active' => $i === 0]) data-hs-slide @if ($i) aria-hidden="true" tabindex="-1" @endif>
                             <img src="{{ media_url($slide->image) }}" alt="{{ $slide->title ?: 'Lusso Home Concept' }}" @if ($i) loading="lazy" @else fetchpriority="high" @endif>
                         </a>
-                    @endforeach
+                    @empty
+                        <span class="hs-slide active"></span>
+                    @endforelse
                 </div>
+
+                <div class="hs-card">
+                    <p class="eyebrow" @if (str_starts_with((string) site('subtitle'), '#')) lang="en" @endif>{{ site('subtitle') }}</p>
+                    <h1 class="serif">{{ $lines ? implode(' ', $lines) : 'Evinizi küçük dokunuşlarla daha güzel, daha şık ve daha lükse ulaştırın.' }}</h1>
+                    <div class="hm-hero-cta">
+                        <a href="{{ route('shop') }}" class="mbtn mbtn-dark">Mağazayı keşfet {{ icon('arrow-right') }}</a>
+                        @if (! empty($trio[0]['link']) && ($trioNames[0] ?? null))
+                            <a href="{{ url($trio[0]['link']) }}" class="mbtn mbtn-line">{{ $trioNames[0] }}</a>
+                        @endif
+                    </div>
+                </div>
+
+                @if ($slides->count() > 1)
+                    <div class="hs-ctrl">
+                        <span class="hs-count"><b data-hs-cur>01</b> / {{ str_pad($slides->count(), 2, '0', STR_PAD_LEFT) }}</span>
+                        <div class="hs-bars">
+                            @foreach ($slides as $i => $slide)
+                                <button type="button" @class(['active' => $i === 0]) data-hs-go="{{ $i }}" aria-label="Görsel {{ $i + 1 }}"><i></i></button>
+                            @endforeach
+                        </div>
+                        <button type="button" class="hs-nav" data-hs-step="-1" aria-label="Önceki görsel">{{ icon('left') }}</button>
+                        <button type="button" class="hs-nav" data-hs-step="1" aria-label="Sonraki görsel">{{ icon('right') }}</button>
+                    </div>
+                @endif
+            </div>
+
+            @if ($S::show('strip'))
+                <ul class="hm-trust">
+                    @foreach (site('strip', []) as $item)
+                        <li>{{ icon($item['icon'] ?? 'check') }} {{ $item['text'] }}</li>
+                    @endforeach
+                </ul>
             @endif
         </div>
     </section>

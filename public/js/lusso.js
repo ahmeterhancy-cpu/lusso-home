@@ -115,6 +115,51 @@
     });
   }
 
+  /* ---- ana sayfa slaytı: ilerleme çizgisi dolunca sonraki görsele geçer ---- */
+  $$('[data-hero]').forEach(function (hs) {
+    var slides = $$('[data-hs-slide]', hs), bars = $$('[data-hs-go]', hs), cur = $('[data-hs-cur]', hs);
+    if (slides.length < 2) return;
+    var i = 0;
+    function go(n) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach(function (s, k) {
+        var on = k === i;
+        s.classList.toggle('active', on);
+        if (on) { s.removeAttribute('aria-hidden'); s.removeAttribute('tabindex'); }
+        else { s.setAttribute('aria-hidden', 'true'); s.setAttribute('tabindex', '-1'); }
+      });
+      bars.forEach(function (b, k) {
+        b.classList.remove('active');
+        b.classList.toggle('done', k < i);
+      });
+      void bars[i].offsetWidth; // dolma animasyonu baştan başlasın
+      bars[i].classList.add('active');
+      if (cur) cur.textContent = (i < 9 ? '0' : '') + (i + 1);
+    }
+    // otomatik geçiş: etkin çizginin CSS animasyonu bitince (hareket azaltılmışsa animasyon yok → durur)
+    bars.forEach(function (b, k) {
+      b.addEventListener('click', function () { go(k); });
+      $('i', b).addEventListener('animationend', function () { if (k === i) go(i + 1); });
+    });
+    $$('[data-hs-step]', hs).forEach(function (b) {
+      b.addEventListener('click', function () { go(i + Number(b.dataset.hsStep)); });
+    });
+    hs.addEventListener('mouseenter', function () { hs.classList.add('paused'); });
+    hs.addEventListener('mouseleave', function () { hs.classList.remove('paused'); });
+    hs.addEventListener('focusin', function () { hs.classList.add('paused'); });
+    hs.addEventListener('focusout', function () { hs.classList.remove('paused'); });
+    // parmakla kaydırma
+    var stage = $('[data-hs-stage]', hs), x0 = null, moved = false;
+    stage.addEventListener('pointerdown', function (e) { x0 = e.clientX; moved = false; });
+    stage.addEventListener('pointerup', function (e) {
+      if (x0 === null) return;
+      var dx = e.clientX - x0; x0 = null;
+      if (Math.abs(dx) > 45) { moved = true; go(i + (dx < 0 ? 1 : -1)); }
+    });
+    stage.addEventListener('click', function (e) { if (moved) { e.preventDefault(); moved = false; } }, true);
+    stage.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  });
+
   /* ---- kaydırmalı raylar ---- */
   $$('[data-carousel]').forEach(function (c) {
     var track = $('.carousel-track', c), prev = $('[data-prev]', c), next = $('[data-next]', c), dotsWrap = $('[data-dots]', c);
