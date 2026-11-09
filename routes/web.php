@@ -16,6 +16,7 @@ Route::get('/product/{slug}', [ShopController::class, 'product'])->name('product
 Route::get('/product-tag/{slug}', [ShopController::class, 'tag'])->name('tag');
 Route::get('/arama', [ShopController::class, 'search'])->name('search');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/xml/{slug}.xml', \App\Http\Controllers\XmlFeedController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:60,1')->name('xml.feed');
 Route::get('/robots.txt', fn () => response(
     trim((string) setting('robots_txt', "User-agent: *\nDisallow: /admin\nDisallow: /cart\nDisallow: /checkout\nDisallow: /hesabim")).
     "\n\nSitemap: ".route('sitemap')."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']))->name('robots');
