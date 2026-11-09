@@ -147,29 +147,35 @@
 
 {{-- Mağazalarımız: alt bilgideki şube metninden --}}
 @if ($S::show('stores') && $stores->isNotEmpty())
-    <section class="hm-sec hm-stores-sec">
-        <div class="wrap">
-            @include('partials.sec-head', ['title' => 'Mağazalarımız', 'eyebrow' => 'Gelin, yakından görün', 'link' => route('contact'), 'linkText' => 'İletişim'])
-            <div class="hm-stores">
-                @foreach ($stores as $store)
-                    @php([$label, $place] = array_pad(array_map('trim', explode(':', $store['title'], 2)), 2, null))
-                    <div class="store">
-                        <span class="store-ic">{{ icon('pin') }}</span>
-                        <p class="store-label">{{ $place ? $label : 'Mağaza' }}</p>
-                        <h3 class="serif">{{ $place ?: $label }}</h3>
-                        @foreach ($store['lines'] as $line)
-                            @if (preg_match('/^(tel|telefon)\s*:?\s*(.+)$/iu', $line, $m))
-                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $m[2]) }}">{{ icon('phone') }} {{ trim($m[2]) }}</a>
-                            @elseif (preg_match('/^e-?mail\s*:?\s*(.+)$/iu', $line, $m))
-                                <a href="mailto:{{ trim($m[1]) }}">{{ icon('paper-plane') }} {{ trim($m[1]) }}</a>
-                            @else
-                                <p>{{ $line }}</p>
-                            @endif
-                        @endforeach
-                    </div>
-                @endforeach
+    <section class="hm-stores-sec">
+        <div class="wrap"><div class="hm-stores-in">
+            <div class="hm-stores-intro">
+                <h2 class="serif">Mağazalarımız</h2>
+                <p class="hm-stores-lead">Dokusunu, rengini, ağırlığını görmek için {{ $stores->count() }} mağazamızdan birine uğrayın. Gelmeden önce aramanız yeterli; aradığınız ürünü hazır ederiz.</p>
+                <div class="hm-stores-links">
+                    @if ($storeEmail)<a href="mailto:{{ $storeEmail }}">{{ icon('paper-plane') }} {{ $storeEmail }}</a>@endif
+                    <a href="{{ route('contact') }}">İletişim sayfası {{ icon('arrow-right') }}</a>
+                </div>
             </div>
-        </div>
+            <ol class="hm-stores">
+                @foreach ($stores as $store)
+                    <li class="store">
+                        <div class="store-text">
+                            <p class="store-label">{{ icon('pin') }} {{ $store['label'] }}</p>
+                            <h3 class="serif">{{ $store['place'] }}</h3>
+                            @if ($store['note'])<p class="store-note">{{ $store['note'] }}</p>@endif
+                            @foreach ($store['lines'] as $line)<p class="store-note">{{ $line }}</p>@endforeach
+                        </div>
+                        <div class="store-acts">
+                            @foreach ($store['phones'] as $phone)
+                                <a class="store-btn" href="tel:{{ preg_replace('/[^0-9+]/', '', $phone) }}">{{ icon('phone') }} {{ $phone }}</a>
+                            @endforeach
+                            <a class="store-btn line" href="{{ $store['map'] }}" target="_blank" rel="noopener">Yol tarifi {{ icon('arrow-right') }}</a>
+                        </div>
+                    </li>
+                @endforeach
+            </ol>
+        </div></div>
     </section>
 @endif
 @endsection

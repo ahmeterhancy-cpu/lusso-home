@@ -46,13 +46,32 @@ class ShopController extends Controller
             ->filter()
             ->map(function ($p) {
                 $lines = array_values(array_filter(array_map('trim', preg_split('~<br\s*/?>~i', $p))));
+                // "Şube 1: Adres (not)" → etiket, yer, not
+                [$label, $place] = array_pad(array_map('trim', explode(':', (string) array_shift($lines), 2)), 2, null);
+                if (! $place) {
+                    [$label, $place] = ['Mağaza', $label];
+                }
+                $note = preg_match('~\(([^)]+)\)~u', $place, $m) ? $m[1] : null;
+                $place = trim(preg_replace('~\s*\([^)]*\)~u', '', $place));
+                $store = ['label' => $label, 'place' => $place, 'note' => $note, 'phones' => [], 'emails' => [], 'lines' => []];
+                foreach ($lines as $line) {
+                    if (preg_match('/^(tel|telefon)\s*:?\s*(.+)$/iu', $line, $m)) {
+                        $store['phones'][] = trim($m[2]);
+                    } elseif (preg_match('/^e-?mail\s*:?\s*(.+)$/iu', $line, $m)) {
+                        $store['emails'][] = trim($m[1]);
+                    } else {
+                        $store['lines'][] = $line;
+                    }
+                }
+                $store['map'] = 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($place.', Kıbrıs');
 
-                return ['title' => array_shift($lines), 'lines' => $lines];
+                return $store;
             })->values();
 
         return view('shop.home', [
             'trioNames' => $trioSlugs->map(fn ($s) => $trioNames[$s] ?? null)->all(),
             'stores' => $stores,
+            'storeEmail' => $stores->pluck('emails')->flatten()->first(),
             'slides' => Slide::where('is_active', true)->orderBy('sort')->get(),
             'latest' => $latest,
             'featured' => $featured,
