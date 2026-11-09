@@ -33,7 +33,15 @@ class PageController extends Controller
             'email' => 'required|email|max:150',
             'phone' => 'nullable|string|max:40',
             'message' => 'required|string|max:3000',
+            'store' => 'nullable|string|max:150',
         ], [], ['name' => 'Ad soyad', 'email' => 'E-posta', 'message' => 'Mesaj']);
+
+        // Seçilen şube mesajın başına yazılır (yalnız sitedeki şube adları kabul edilir).
+        $store = $data['store'] ?? null;
+        unset($data['store']);
+        if ($store && \App\Support\SiteContent::stores()->contains(fn ($s) => $s['label'].' – '.$s['place'] === $store)) {
+            $data['message'] = '['.$store.'] '.$data['message'];
+        }
 
         $msg = ContactMessage::create($data);
         try {

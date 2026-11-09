@@ -205,6 +205,16 @@ class StorefrontTest extends TestCase
         $this->assertDatabaseHas('contact_messages', ['name' => 'Zeynep']);
     }
 
+    public function test_contact_form_prefixes_chosen_store_and_ignores_unknown(): void
+    {
+        $key = \App\Support\SiteContent::stores()->map(fn ($s) => $s['label'].' – '.$s['place'])->first();
+        $this->post('/iletisim', ['name' => 'Ayşe', 'email' => 'a@example.com', 'message' => 'Stok var mı?', 'store' => $key])->assertSessionHas('success');
+        $this->assertDatabaseHas('contact_messages', ['name' => 'Ayşe', 'message' => '['.$key.'] Stok var mı?']);
+
+        $this->post('/iletisim', ['name' => 'Bot', 'email' => 'b@example.com', 'message' => 'Selam', 'store' => 'Sahte şube']);
+        $this->assertDatabaseHas('contact_messages', ['name' => 'Bot', 'message' => 'Selam']);
+    }
+
     public function test_guest_order_tracking(): void
     {
         $this->checkout('havale');

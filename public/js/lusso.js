@@ -321,4 +321,20 @@
       b.setAttribute('aria-label', show ? 'Şifreyi gizle' : 'Şifreyi göster');
     });
   });
+
+  /* ---- iletişim: şube kartına tıklayınca harita o şubeyi gösterir ---- */
+  var ct = $('[data-ct]');
+  if (ct) {
+    var map = $('[data-ct-map]', ct), cards = $$('[data-ct-store]', ct);
+    cards.forEach(function (card) {
+      $('[data-ct-pick]', card).addEventListener('click', function () {
+        cards.forEach(function (c) {
+          c.classList.toggle('active', c === card);
+          $('[data-ct-pick]', c).setAttribute('aria-pressed', c === card ? 'true' : 'false');
+        });
+        if (map.getAttribute('src') !== card.dataset.embed) map.setAttribute('src', card.dataset.embed);
+        if (window.innerWidth < 1025) map.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+  }
 })();
