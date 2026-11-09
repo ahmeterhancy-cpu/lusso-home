@@ -11,6 +11,9 @@ use App\Models\Setting;
  */
 class SiteContent
 {
+    /** Alt bilgi iletişim metninin varsayılanı (eski sitedeki şubeler). */
+    public const FOOTER_CONTACT = '<p>Şube 1: Neopark no 6, şht Orhan Durusoy sokak, Girne (Eziç Premierin karşısında)<br>Tel: 0392 815 82 83</p><p class="gap">Şube 2 : Merit Royal Diamond Hotel<br>Tel: 0539 109 99 00</p><p>Şube 3 : The Arkın Iskele Hotel<br>Tel: 0539 109 99 00<br>E-Mail:info@lussohomeconcept.com</p>';
+
     private static ?array $cache = null;
 
     public const ICONS = [
@@ -30,7 +33,7 @@ class SiteContent
             'menu_extra' => [],
             'sections' => [
                 'slider' => true, 'trio' => true, 'trend' => true, 'latest' => true, 'info' => true,
-                'featured' => true, 'promo' => true, 'strip' => true, 'grid' => true,
+                'featured' => true, 'promo' => true, 'strip' => true, 'grid' => true, 'stores' => true,
             ],
             'subtitle' => '#MyLussoLife',
             'trend_title' => 'Trend Kategoriler',

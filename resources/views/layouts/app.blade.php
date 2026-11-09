@@ -17,7 +17,7 @@
     <meta property="og:locale" content="tr_TR">
     <link rel="icon" href="{{ asset('img/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=lato:300,400,400i,700,700i,900&display=swap">
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=lato:300,400,400i,700,700i,900|fraunces:400,500,400i&display=swap">
     <link rel="stylesheet" href="{{ asset('css/lusso.css') }}?v={{ filemtime(public_path('css/lusso.css')) }}">
     @stack('head')
     {!! setting('head_code') !!}
@@ -100,7 +100,7 @@
             @endforeach
             <div class="contact">
                 <h5 class="widget-title">{{ site('contact_title') }}</h5>
-                {!! setting('footer_contact', '<p>Şube 1: Neopark no 6, şht Orhan Durusoy sokak, Girne (Eziç Premierin karşısında)<br>Tel: 0392 815 82 83</p><p class="gap">Şube 2 : Merit Royal Diamond Hotel<br>Tel: 0539 109 99 00</p><p>Şube 3 : The Arkın Iskele Hotel<br>Tel: 0539 109 99 00<br>E-Mail:info@lussohomeconcept.com</p>') !!}
+                {!! setting('footer_contact', \App\Support\SiteContent::FOOTER_CONTACT) !!}
             </div>
         </div>
         <div class="copyrights">{{ \App\Support\SiteContent::text(site('copyright')) }}

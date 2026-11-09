@@ -36,7 +36,23 @@ class ShopController extends Controller
             ? $this->inCategory($tableware)->with(['images', 'categories:id'])->where('price', '>', 0)->latest('published_at')->take((int) site('grid_count', 12))->get()
             : collect();
 
+        // Üçlü afişin bağlantısı kategoriyse altına kategori adını yaz.
+        $trioSlugs = collect(site('trio', []))->map(fn ($b) => basename(parse_url($b['link'] ?? '', PHP_URL_PATH) ?: ''));
+        $trioNames = Category::whereIn('slug', $trioSlugs->filter())->pluck('name', 'slug');
+
+        // Mağazalar: alt bilgideki iletişim metninin her paragrafı bir şube.
+        $stores = collect(preg_split('~</p>~i', (string) setting('footer_contact', \App\Support\SiteContent::FOOTER_CONTACT)))
+            ->map(fn ($p) => trim(strip_tags($p, '<br>')))
+            ->filter()
+            ->map(function ($p) {
+                $lines = array_values(array_filter(array_map('trim', preg_split('~<br\s*/?>~i', $p))));
+
+                return ['title' => array_shift($lines), 'lines' => $lines];
+            })->values();
+
         return view('shop.home', [
+            'trioNames' => $trioSlugs->map(fn ($s) => $trioNames[$s] ?? null)->all(),
+            'stores' => $stores,
             'slides' => Slide::where('is_active', true)->orderBy('sort')->get(),
             'latest' => $latest,
             'featured' => $featured,

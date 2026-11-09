@@ -115,24 +115,10 @@
     });
   }
 
-  /* ---- slider ---- */
-  var hero = $('[data-hero]');
-  if (hero) {
-    var slides = $$('.slide', hero), dots = $$('.hero-dots button', hero), cur = 0, timer;
-    var go = function (i) {
-      slides[cur].classList.remove('active'); if (dots[cur]) dots[cur].classList.remove('active');
-      cur = (i + slides.length) % slides.length;
-      slides[cur].classList.add('active'); if (dots[cur]) dots[cur].classList.add('active');
-    };
-    var play = function () { clearInterval(timer); if (slides.length > 1) timer = setInterval(function () { go(cur + 1); }, 6000); };
-    dots.forEach(function (d, i) { d.addEventListener('click', function () { go(i); play(); }); });
-    play();
-  }
-
   /* ---- kaydırmalı raylar ---- */
   $$('[data-carousel]').forEach(function (c) {
     var track = $('.carousel-track', c), prev = $('[data-prev]', c), next = $('[data-next]', c), dotsWrap = $('[data-dots]', c);
-    var page = function () { return track.clientWidth + 30; };
+    var page = function () { return track.clientWidth + (parseFloat(getComputedStyle(track).columnGap) || 0); };
     if (prev) prev.addEventListener('click', function () { track.scrollBy({ left: -page() }); });
     if (next) next.addEventListener('click', function () { track.scrollBy({ left: page() }); });
     if (dotsWrap) {
@@ -152,21 +138,32 @@
     }
   });
 
-  /* ---- ürün galerisi + büyütme ---- */
+  /* ---- ürün galerisi (kaydırmalı) + büyütme ---- */
   var gallery = $('[data-gallery]'), lb = $('[data-lightbox]'), lbImgs = [], lbIdx = 0;
   function closeLightbox() { if (lb) lb.classList.remove('open'); }
   if (gallery) {
-    var main = $('[data-main]', gallery);
-    var thumbs = $$('[data-thumb]', gallery);
-    lbImgs = thumbs.length ? thumbs.map(function (t) { return t.getAttribute('data-thumb'); }) : (main ? [main.src] : []);
-    thumbs.forEach(function (t, i) {
-      t.addEventListener('click', function () {
-        main.src = t.getAttribute('data-thumb'); lbIdx = i;
-        thumbs.forEach(function (x) { x.classList.toggle('active', x === t); });
-      });
+    var track = $('[data-track]', gallery);
+    var slidesEls = track ? $$('.pd-slide', track) : [];
+    var thumbs = $$('[data-thumb]', gallery), dotsEls = $$('.pd-dots span', gallery);
+    lbImgs = slidesEls.map(function (s) { return $('img', s).src; });
+    var current = function () { return track ? Math.round(track.scrollLeft / Math.max(1, track.clientWidth)) : 0; };
+    var show = function (i) {
+      if (!track) return;
+      i = (i + slidesEls.length) % slidesEls.length;
+      track.scrollTo({ left: i * track.clientWidth });
+    };
+    var mark = function () {
+      var i = current(); lbIdx = i;
+      thumbs.forEach(function (t, j) { t.classList.toggle('active', i === j); });
+      dotsEls.forEach(function (d, j) { d.classList.toggle('active', i === j); });
+    };
+    if (track) track.addEventListener('scroll', function () { window.requestAnimationFrame(mark); }, { passive: true });
+    thumbs.forEach(function (t, i) { t.addEventListener('click', function () { show(i); }); });
+    $$('[data-step]', gallery).forEach(function (b) {
+      b.addEventListener('click', function () { show(current() + parseInt(b.getAttribute('data-step'), 10)); });
     });
-    var openLb = function () { if (!lb || !lbImgs.length) return; $('img', lb).src = lbImgs[lbIdx]; lb.classList.add('open'); };
-    if (main) main.addEventListener('click', openLb);
+    var openLb = function () { if (!lb || !lbImgs.length) return; lbIdx = current(); $('img', lb).src = lbImgs[lbIdx]; lb.classList.add('open'); };
+    slidesEls.forEach(function (s) { s.addEventListener('click', openLb); });
     var z = $('[data-zoom]', gallery); if (z) z.addEventListener('click', openLb);
     if (lb) {
       lb.addEventListener('click', function (e) {
@@ -175,6 +172,14 @@
         else if (e.target.closest('[data-lb-close]') || e.target === lb) closeLightbox();
       });
     }
+  }
+
+  /* ---- ürün sayfası: asıl düğme görünmeyince alttan satın alma çubuğu ---- */
+  var bar = $('[data-pd-bar]'), buyForm = $('[data-add-form]');
+  if (bar && buyForm) {
+    var syncBar = function () { bar.classList.toggle('shown', buyForm.getBoundingClientRect().bottom < 0); };
+    window.addEventListener('scroll', syncBar, { passive: true });
+    syncBar();
   }
 
   /* ---- sekmeler ---- */

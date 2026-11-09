@@ -87,6 +87,7 @@ class ManageAppearance extends Page implements HasSchemas
                         Toggle::make('sections.promo')->label('Tanıtım bloğu'),
                         Toggle::make('sections.strip')->label('Altın şerit'),
                         Toggle::make('sections.grid')->label('Kategori ızgarası (alt)'),
+                        Toggle::make('sections.stores')->label('Mağazalarımız'),
                     ]),
                     Section::make('Başlıklar ve ürün sayıları')->columns(3)->schema([
                         TextInput::make('subtitle')->label('Bölüm üst yazısı')->helperText('Başlıkların üstündeki küçük yazı'),
