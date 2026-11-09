@@ -346,6 +346,15 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: rgba(12
 .totals-row { display: flex; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .totals-row.total { font-size: 20px; font-weight: 700; color: var(--heading); border-bottom: 0; }
 .totals-row.total span:last-child { color: var(--primary); }
+.totals-row.discount span:last-child, tr.discount td:last-child { color: #3d8b3d; }
+.coupon-box { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line); }
+.coupon-form { display: flex; gap: 8px; }
+.coupon-form input { text-transform: uppercase; letter-spacing: 1px; }
+.coupon-form .btn { white-space: nowrap; }
+.coupon-applied { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; background: #f2f8ef; padding: 10px 12px; color: #2f6b31; }
+.link-like { background: none; border: 0; padding: 0; color: #a01010; cursor: pointer; text-decoration: underline; font-size: 13px; }
+.topbar .campaign-banner { flex: 1; text-align: center; font-weight: 700; color: #000; font-size: 12px; letter-spacing: .5px; padding: 0 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.label.campaign { background: #37383c; }
 .free-ship-note { font-size: 13px; color: #777; padding: 12px 0 5px; }
 .cart-actions { display: flex; justify-content: space-between; gap: 10px; }
 

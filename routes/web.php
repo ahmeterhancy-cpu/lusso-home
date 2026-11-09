@@ -22,6 +22,8 @@ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
 Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
+Route::post('/cart/kupon', [CartController::class, 'applyCoupon'])->middleware('throttle:15,1')->name('cart.coupon');
+Route::post('/cart/kupon/kaldir', [CartController::class, 'removeCoupon'])->name('cart.coupon.remove');
 Route::get('/begendiklerim', [CartController::class, 'wishlist'])->name('wishlist');
 Route::post('/begendiklerim/toggle', [CartController::class, 'toggleWishlist'])->name('wishlist.toggle');
 

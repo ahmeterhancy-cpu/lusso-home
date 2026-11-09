@@ -18,6 +18,9 @@
             @foreach ($order->items as $item)
                 <tr style="border-bottom:1px solid #eee"><td>{{ $item->name }} × {{ $item->quantity }}</td><td align="right">{{ money($item->total) }}</td></tr>
             @endforeach
+            @foreach ((array) $order->discount_lines as $d)
+                <tr><td>{{ $d['label'] }}</td><td align="right" style="color:#459647">−{{ money($d['amount']) }}</td></tr>
+            @endforeach
             <tr><td>Kargo</td><td align="right">{{ (float) $order->shipping > 0 ? money($order->shipping) : 'Ücretsiz' }}</td></tr>
             <tr><td><strong>Toplam</strong></td><td align="right" style="color:#db8700"><strong>{{ money($order->total) }}</strong></td></tr>
         </table>

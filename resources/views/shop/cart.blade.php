@@ -52,12 +52,26 @@
 
             <div class="cart-totals">
                 <h2>Sepet Toplamı</h2>
-                <div class="totals-row"><span>Ara Toplam</span><span>{{ money($subtotal) }}</span></div>
-                <div class="totals-row"><span>Kargo</span><span>{{ $shipping > 0 ? money($shipping) : 'Ücretsiz' }}</span></div>
-                @if ($shipping > 0 && $subtotal < $freeMin)
-                    <p class="free-ship-note">Ücretsiz kargo için {{ money($freeMin - $subtotal) }} daha ekleyin.</p>
+                @include('partials.totals')
+                @if ($q['shipping'] > 0 && $q['subtotal'] < $freeMin)
+                    <p class="free-ship-note">Ücretsiz kargo için {{ money($freeMin - $q['subtotal']) }} daha ekleyin.</p>
                 @endif
-                <div class="totals-row total"><span>Toplam</span><span>{{ money($subtotal + $shipping) }}</span></div>
+
+                <div class="coupon-box">
+                    @if ($q['coupon'])
+                        <div class="coupon-applied">
+                            <span><strong>{{ $q['coupon']->code }}</strong> — {{ $q['coupon']->summary() }}</span>
+                            <form method="post" action="{{ route('cart.coupon.remove') }}">@csrf<button type="submit" class="link-like">Kaldır</button></form>
+                        </div>
+                    @else
+                        <form method="post" action="{{ route('cart.coupon') }}" class="coupon-form">
+                            @csrf
+                            <input type="text" name="code" value="{{ old('code') }}" placeholder="Kupon kodu" aria-label="Kupon kodu" autocomplete="off">
+                            <button type="submit" class="btn btn-black">Uygula</button>
+                        </form>
+                    @endif
+                </div>
+
                 <a href="{{ route('checkout') }}" class="btn btn-primary btn-large btn-block" style="margin-top:15px">Ödeme Sayfasına Git</a>
             </div>
         </div>

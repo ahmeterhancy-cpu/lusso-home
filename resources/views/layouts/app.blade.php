@@ -27,6 +27,9 @@
     <div class="topbar">
         <div class="container">
             <div class="support"><span>DESTEK HATTI:</span> <a href="tel:{{ preg_replace('/[^0-9+]/', '', setting('support_phone', '+90 539 109 99 00')) }}">{{ setting('support_phone', '+90 539 109 99 00') }}</a></div>
+            @if ($banner = collect(\App\Models\Campaign::active())->pluck('banner')->filter()->first())
+                <div class="campaign-banner">{{ $banner }}</div>
+            @endif
             <ul class="topbar-menu">
                 <li><a href="{{ route('home') }}">Ana Sayfa</a></li>
                 <li><a href="{{ route('account') }}">Hesabım</a></li>

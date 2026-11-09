@@ -52,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
             ->maxContentWidth('full')
             ->globalSearchKeyBindings(['ctrl+k', 'command+k'])
             ->databaseNotifications(false)
-            ->navigationGroups(['Satış', 'Katalog', 'İçerik', 'Ayarlar'])
+            ->navigationGroups(['Satış', 'Katalog', 'Pazarlama', 'İçerik', 'Ayarlar'])
             ->navigationItems([
                 NavigationItem::make('Siteyi görüntüle')
                     ->url(fn () => url('/'), shouldOpenInNewTab: true)

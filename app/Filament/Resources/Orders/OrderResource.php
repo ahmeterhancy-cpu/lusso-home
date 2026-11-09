@@ -156,8 +156,11 @@ class OrderResource extends Resource
                         TextEntry::make('quantity'),
                         TextEntry::make('total')->formatStateUsing(fn ($state) => money($state))->weight(FontWeight::Bold),
                     ]),
-                    Grid::make(3)->schema([
+                    Grid::make(4)->schema([
                         TextEntry::make('subtotal')->label('Ara toplam')->formatStateUsing(fn ($state) => money($state)),
+                        TextEntry::make('discount')->label('İndirim')->color('success')
+                            ->formatStateUsing(fn ($state) => (float) $state > 0 ? '−'.money($state) : '—')
+                            ->belowContent(fn (Order $record) => collect((array) $record->discount_lines)->pluck('label')->join(', ') ?: null),
                         TextEntry::make('shipping')->label('Kargo')->formatStateUsing(fn ($state) => (float) $state > 0 ? money($state) : 'Ücretsiz'),
                         TextEntry::make('total')->label('Genel toplam')->formatStateUsing(fn ($state) => money($state))
                             ->size(TextSize::Large)->weight(FontWeight::Bold)->color('primary'),

@@ -53,6 +53,9 @@
 </table>
 <table class="tot" style="width:280px;margin-left:auto;margin-top:10px">
     <tr><td>Ara toplam</td><td class="r">{{ money($order->subtotal) }}</td></tr>
+    @foreach ((array) $order->discount_lines as $d)
+        <tr><td>{{ $d['label'] }}</td><td class="r">−{{ money($d['amount']) }}</td></tr>
+    @endforeach
     <tr><td>Kargo</td><td class="r">{{ (float) $order->shipping > 0 ? money($order->shipping) : 'Ücretsiz' }}</td></tr>
     <tr class="big"><td>Toplam</td><td class="r">{{ money($order->total) }}</td></tr>
 </table>

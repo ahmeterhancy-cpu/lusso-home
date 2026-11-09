@@ -44,9 +44,10 @@
                 @endforeach
                 </tbody>
             </table>
-            <div class="totals-row"><span>Ara Toplam</span><span>{{ money($subtotal) }}</span></div>
-            <div class="totals-row"><span>Kargo</span><span>{{ $shipping > 0 ? money($shipping) : 'Ücretsiz' }}</span></div>
-            <div class="totals-row total"><span>Toplam</span><span>{{ money($subtotal + $shipping) }}</span></div>
+            @include('partials.totals')
+            @unless ($q['coupon'])
+                <p style="font-size:13px;margin:10px 0 0">Kuponunuz mu var? <a href="{{ route('cart') }}">Sepette uygulayın</a>.</p>
+            @endunless
 
             <ul class="pay-methods">
                 @foreach ($methods as $key => $label)

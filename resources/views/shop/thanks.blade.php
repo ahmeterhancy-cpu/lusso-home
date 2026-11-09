@@ -39,7 +39,7 @@
                 @foreach ($order->items as $item)
                     <tr><td>{{ $item->name }} × {{ $item->quantity }}</td><td style="text-align:right">{{ money($item->total) }}</td></tr>
                 @endforeach
-                <tr><td>Kargo</td><td style="text-align:right">{{ (float) $order->shipping > 0 ? money($order->shipping) : 'Ücretsiz' }}</td></tr>
+                @include('partials.order-totals')
                 <tr><td><strong>Toplam</strong></td><td style="text-align:right"><strong>{{ money($order->total) }}</strong></td></tr>
             </tbody>
         </table>

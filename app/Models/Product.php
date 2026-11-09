@@ -45,12 +45,49 @@ class Product extends Model
         return route('product', $this->slug);
     }
 
-    /** Satış fiyatı (indirim varsa indirimli). */
+    private ?array $categoryIdsMemo = null;
+
+    /** Ürünün kategori kimlikleri (ilişki yüklüyse sorgusuz). */
+    public function categoryIds(): array
+    {
+        if ($this->categoryIdsMemo === null) {
+            $this->categoryIdsMemo = $this->relationLoaded('categories')
+                ? $this->categories->pluck('id')->all()
+                : ($this->exists ? $this->categories()->pluck('categories.id')->all() : []);
+        }
+
+        return $this->categoryIdsMemo;
+    }
+
+    /** Ürüne uygulanan en yüksek kategori kampanyası (yoksa null). */
+    public function campaign(): ?array
+    {
+        if ((float) $this->price <= 0) {
+            return null;
+        }
+        $best = null;
+        foreach (Campaign::active() as $c) {
+            if ($c['type'] === 'category_percent' && $c['value'] > 0 && array_intersect($c['cats'], $this->categoryIds())) {
+                if (! $best || $c['value'] > $best['value']) {
+                    $best = $c;
+                }
+            }
+        }
+
+        return $best;
+    }
+
+    /** Satış fiyatı: normal, panelden girilen indirimli fiyat ve kategori kampanyasının en düşüğü. */
     public function finalPrice(): float
     {
+        $price = (float) $this->price;
         $sale = (float) $this->sale_price;
+        $final = $sale > 0 && $sale < $price ? $sale : $price;
+        if ($c = $this->campaign()) {
+            $final = min($final, round($price * (1 - $c['value'] / 100)));
+        }
 
-        return $sale > 0 && $sale < (float) $this->price ? $sale : (float) $this->price;
+        return $final;
     }
 
     public function onSale(): bool

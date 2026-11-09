@@ -16,16 +16,19 @@ class CheckoutController extends Controller
 
     public function show()
     {
-        $lines = $this->cart->lines();
-        if ($lines->isEmpty()) {
+        $q = $this->cart->quote(auth()->user()?->email);
+        if ($q['lines']->isEmpty()) {
             return redirect()->route('cart');
         }
-        $subtotal = (float) $lines->sum('total');
+        if ($q['coupon_error']) {
+            $this->cart->setCoupon(null);
+
+            return redirect()->route('cart')->with('error', $q['coupon_error'].' Kupon sepetten kaldırıldı.');
+        }
 
         return view('shop.checkout', [
-            'lines' => $lines,
-            'subtotal' => $subtotal,
-            'shipping' => $this->cart->shipping($subtotal),
+            'lines' => $q['lines'],
+            'q' => $q,
             'methods' => $this->methods(),
             'user' => auth()->user(),
         ]);

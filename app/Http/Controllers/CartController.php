@@ -13,15 +13,37 @@ class CartController extends Controller
 
     public function index()
     {
-        $lines = $this->cart->lines();
-        $subtotal = (float) $lines->sum('total');
+        $q = $this->cart->quote();
+        if ($q['coupon_error']) {
+            // Kupon artık geçerli değilse (süre doldu, tutar düştü …) sessizce değil, açıklamayla düşür.
+            $this->cart->setCoupon(null);
+            session()->now('error', $q['coupon_error'].' Kupon sepetten kaldırıldı.');
+        }
 
         return view('shop.cart', [
-            'lines' => $lines,
-            'subtotal' => $subtotal,
-            'shipping' => $this->cart->shipping($subtotal),
+            'lines' => $q['lines'],
+            'q' => $q,
             'freeMin' => (float) setting('free_shipping_min', 5000),
         ]);
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $code = trim((string) $request->validate(['code' => 'required|string|max:40'], ['code.required' => 'Kupon kodunu yazın.'])['code']);
+        $q = app(\App\Services\PricingService::class)->quote($this->cart->lines(), $code, null, auth()->id());
+        if (! $q['coupon']) {
+            return back()->with('error', $q['coupon_error'] ?? 'Kupon uygulanamadı.')->withInput();
+        }
+        $this->cart->setCoupon($q['coupon']->code);
+
+        return back()->with('success', '“'.$q['coupon']->code.'” kuponu uygulandı: '.$q['coupon']->summary().'.');
+    }
+
+    public function removeCoupon()
+    {
+        $this->cart->setCoupon(null);
+
+        return back()->with('success', 'Kupon kaldırıldı.');
     }
 
     public function add(Request $request)
@@ -78,7 +100,7 @@ class CartController extends Controller
 
     public function wishlist(WishlistService $wishlist)
     {
-        $products = Product::visible()->with('images')->whereIn('id', $wishlist->ids())->get();
+        $products = Product::visible()->with(['images', 'categories:id'])->whereIn('id', $wishlist->ids())->get();
 
         return view('shop.wishlist', compact('products'));
     }

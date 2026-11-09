@@ -11,6 +11,7 @@
         <span class="labels">
             @if (! $product->in_stock)<span class="label out">Tükendi</span>
             @elseif ($product->onSale())<span class="label onsale">-{{ round((1 - $product->finalPrice() / (float) $product->price) * 100) }}%</span>@endif
+            @if ($product->in_stock && ($badge = $product->campaign()['badge'] ?? null))<span class="label campaign">{{ $badge }}</span>@endif
         </span>
     </a>
     <div class="card-actions">

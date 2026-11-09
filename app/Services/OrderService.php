@@ -23,8 +23,9 @@ class OrderService
             throw new RuntimeException('Sepetiniz boş.');
         }
 
-        $order = DB::transaction(function () use ($lines, $data, $method, $userId) {
-            $subtotal = 0;
+        $couponCode = $this->cart->couponCode();
+
+        $order = DB::transaction(function () use ($lines, $data, $method, $userId, $couponCode) {
             foreach ($lines as $l) {
                 $p = Product::whereKey($l['product']->id)->lockForUpdate()->first();
                 if (! $p || ! $p->purchasable()) {
@@ -40,9 +41,21 @@ class OrderService
                     }
                     $p->save();
                 }
-                $subtotal += $p->finalPrice() * $l['qty'];
             }
-            $shipping = $this->cart->shipping($subtotal);
+
+            // Tutar, müşterinin sepette gördüğü hesapla aynı servisle hesaplanır.
+            $q = app(PricingService::class)->quote($lines, $couponCode, $data['email'], $userId);
+            if ($couponCode && ! $q['coupon']) {
+                throw new RuntimeException(($q['coupon_error'] ?? 'Kupon geçersiz.').' Kuponu kaldırıp tekrar deneyin.');
+            }
+            if ($q['coupon']) {
+                // Kullanım sınırı yarışına karşı kilitle ve yeniden say.
+                $c = \App\Models\Coupon::whereKey($q['coupon']->id)->lockForUpdate()->first();
+                if ($c->usage_limit !== null && $c->used_count >= $c->usage_limit) {
+                    throw new RuntimeException('Bu kuponun kullanım hakkı az önce doldu. Kuponu kaldırıp tekrar deneyin.');
+                }
+                $c->increment('used_count');
+            }
 
             $order = Order::create([
                 'number' => $this->newNumber(),
@@ -57,9 +70,12 @@ class OrderService
                 'address' => $data['address'],
                 'city' => $data['city'],
                 'note' => $data['note'] ?? null,
-                'subtotal' => $subtotal,
-                'shipping' => $shipping,
-                'total' => $subtotal + $shipping,
+                'subtotal' => $q['subtotal'],
+                'discount' => $q['discount'],
+                'coupon_code' => $q['coupon']?->code,
+                'discount_lines' => $q['discounts'] ?: null,
+                'shipping' => $q['shipping'],
+                'total' => $q['total'],
                 'track_token' => Str::random(32),
             ]);
             foreach ($lines as $l) {
@@ -72,7 +88,8 @@ class OrderService
                     'total' => $l['price'] * $l['qty'],
                 ]);
             }
-            $order->log('Sipariş oluşturuldu ('.$order->methodLabel().').');
+            $order->log('Sipariş oluşturuldu ('.$order->methodLabel().').'
+                .($q['discounts'] ? ' İndirimler: '.collect($q['discounts'])->map(fn ($d) => $d['label'].' −'.money($d['amount']))->join(', ') : ''));
 
             return $order;
         });
@@ -102,15 +119,8 @@ class OrderService
         if ($order->payment_status === 'paid' || $order->status === 'failed') {
             return;
         }
-        DB::transaction(function () use ($order) {
-            foreach ($order->items as $item) {
-                $p = $item->product_id ? Product::whereKey($item->product_id)->lockForUpdate()->first() : null;
-                if ($p && $p->stock_qty !== null) {
-                    $p->update(['stock_qty' => $p->stock_qty + $item->quantity, 'in_stock' => true]);
-                }
-            }
-            $order->update(['status' => 'failed', 'payment_status' => 'failed']);
-        });
+        $this->restock($order);
+        $order->update(['status' => 'failed', 'payment_status' => 'failed']);
         $order->log('Ödeme başarısız: '.$reason);
     }
 
@@ -118,7 +128,8 @@ class OrderService
     public function changeStatus(Order $order, string $status, ?string $note, bool $notifyCustomer, ?string $tracking = null): void
     {
         $old = $order->status;
-        if ($status === 'cancelled' && $old !== 'cancelled') {
+        // Başarısız siparişin stoğu/kuponu zaten iade edildi; ikinci kez iade etme.
+        if ($status === 'cancelled' && ! in_array($old, ['cancelled', 'failed'], true)) {
             $this->restock($order);
         }
         $order->update(['status' => $status] + ($tracking !== null ? ['tracking_no' => $tracking] : []));
@@ -139,6 +150,7 @@ class OrderService
         }
     }
 
+    /** Stoğu ve kupon kullanım hakkını geri verir (iptal / ödeme başarısız). */
     private function restock(Order $order): void
     {
         DB::transaction(function () use ($order) {
@@ -147,6 +159,9 @@ class OrderService
                 if ($p && $p->stock_qty !== null) {
                     $p->update(['stock_qty' => $p->stock_qty + $item->quantity, 'in_stock' => true]);
                 }
+            }
+            if ($order->coupon_code) {
+                \App\Models\Coupon::where('code', $order->coupon_code)->where('used_count', '>', 0)->decrement('used_count');
             }
         });
     }

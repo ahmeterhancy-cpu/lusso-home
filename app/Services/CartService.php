@@ -13,6 +13,11 @@ class CartService
 {
     private const KEY = 'cart';
 
+    /** Aynı istek içinde sepet satırlarını tekrar sorgulamamak için. */
+    private ?Collection $linesMemo = null;
+
+    private ?array $linesMemoKey = null;
+
     public function raw(): array
     {
         return session(self::KEY, []);
@@ -43,7 +48,8 @@ class CartService
 
     public function clear(): void
     {
-        session()->forget(self::KEY);
+        session()->forget([self::KEY, 'coupon']);
+        $this->linesMemo = null;
     }
 
     /** @return Collection<int, array{product: Product, qty: int, price: float, total: float}> */
@@ -53,7 +59,10 @@ class CartService
         if (! $raw) {
             return collect();
         }
-        $products = Product::visible()->with('images')->whereIn('id', array_keys($raw))->get()->keyBy('id');
+        if ($this->linesMemo !== null && $this->linesMemoKey === $raw) {
+            return $this->linesMemo;
+        }
+        $products = Product::visible()->with(['images', 'categories:id'])->whereIn('id', array_keys($raw))->get()->keyBy('id');
 
         $lines = collect();
         $clean = [];
@@ -69,6 +78,8 @@ class CartService
         if (count($clean) !== count($raw)) {
             session([self::KEY => $clean]);
         }
+        $this->linesMemo = $lines;
+        $this->linesMemoKey = $this->raw();
 
         return $lines;
     }
@@ -85,24 +96,40 @@ class CartService
 
     public function shipping(float $subtotal): float
     {
-        if ($subtotal <= 0) {
-            return 0;
-        }
-        $free = (float) setting('free_shipping_min', 5000);
-        $fee = (float) setting('shipping_fee', 0);
+        return app(PricingService::class)->shipping($subtotal);
+    }
 
-        return $subtotal >= $free ? 0 : $fee;
+    public function couponCode(): ?string
+    {
+        return session('coupon');
+    }
+
+    public function setCoupon(?string $code): void
+    {
+        $code ? session(['coupon' => $code]) : session()->forget('coupon');
+    }
+
+    /** Sepetin tam tutar dökümü (kampanya, kupon, kargo). Geçersizleşen kupon oturumdan düşer. */
+    public function quote(?string $email = null, ?int $userId = null): array
+    {
+        $q = app(PricingService::class)->quote($this->lines(), $this->couponCode(), $email, $userId ?? auth()->id());
+        $q['lines'] = $this->lines();
+
+        return $q;
     }
 
     public function summary(): array
     {
         $lines = $this->lines();
         $subtotal = (float) $lines->sum('total');
+        $q = app(PricingService::class)->quote($lines, $this->couponCode(), null, auth()->id());
 
         return [
             'count' => (int) $lines->sum('qty'),
             'subtotal' => $subtotal,
             'subtotal_text' => money($subtotal),
+            'discount_text' => $q['discount'] > 0 ? '−'.money($q['discount']) : null,
+            'total_text' => money($q['subtotal'] - $q['discount']),
             'items' => $lines->map(fn ($l) => [
                 'id' => $l['product']->id,
                 'name' => $l['product']->name,

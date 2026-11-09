@@ -25,15 +25,15 @@ class ShopController extends Controller
             return redirect()->route('search', ['s' => $request->query('s')]);
         }
 
-        $latest = Product::visible()->with('images')->latest('published_at')->take(8)->get();
-        $featured = Product::visible()->with('images')->where('is_featured', true)->orderBy('sort')->latest('published_at')->take(12)->get();
+        $latest = Product::visible()->with(['images', 'categories:id'])->latest('published_at')->take(8)->get();
+        $featured = Product::visible()->with(['images', 'categories:id'])->where('is_featured', true)->orderBy('sort')->latest('published_at')->take(12)->get();
         if ($featured->isEmpty()) {
-            $featured = Product::visible()->with('images')->whereHas('categories', fn ($q) => $q->where('slug', 'mackenzie-childs'))->latest('published_at')->take(12)->get();
+            $featured = Product::visible()->with(['images', 'categories:id'])->whereHas('categories', fn ($q) => $q->where('slug', 'mackenzie-childs'))->latest('published_at')->take(12)->get();
         }
         $trend = Category::active()->where('is_trend', true)->orderBy('trend_sort')->get();
         $tableware = Category::where('slug', setting('home_grid_category', 'sofra-grubu'))->first();
         $tablewareProducts = $tableware
-            ? $this->inCategory($tableware)->with('images')->where('price', '>', 0)->latest('published_at')->take(12)->get()
+            ? $this->inCategory($tableware)->with(['images', 'categories:id'])->where('price', '>', 0)->latest('published_at')->take(12)->get()
             : collect();
 
         return view('shop.home', [
@@ -99,7 +99,7 @@ class ShopController extends Controller
             default => $query->orderBy('sort')->latest('published_at'),
         };
 
-        $products = $query->with('images')->paginate((int) setting('per_page', 12))->withQueryString();
+        $products = $query->with(['images', 'categories:id'])->paginate((int) setting('per_page', 12))->withQueryString();
 
         return view('shop.listing', [
             'products' => $products,
@@ -116,7 +116,7 @@ class ShopController extends Controller
 
         $primary = $product->categories->sortByDesc(fn ($c) => $c->parent_id ? 1 : 0)->first();
         $related = $primary
-            ? Product::visible()->with('images')->whereKeyNot($product->id)
+            ? Product::visible()->with(['images', 'categories:id'])->whereKeyNot($product->id)
                 ->whereHas('categories', fn ($q) => $q->whereKey($primary->id))->inRandomOrder()->take(8)->get()
             : collect();
 
