@@ -1,3 +1,18 @@
+# Turhost: hesap PHP sürümünden bağımsız olarak bu site PHP 8.3 ile çalışır (CloudLinux alt-php83).
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-alt-php83___lsphp
+</FilesMatch>
+
+# Geçici adres (yeni.*) arama motorlarına kapalı.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP_HOST} ^yeni\. [NC]
+    RewriteRule .* - [E=LUSSO_NOINDEX:1]
+</IfModule>
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow" env=LUSSO_NOINDEX
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
