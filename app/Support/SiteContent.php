@@ -79,6 +79,12 @@ class SiteContent
                     ['label' => 'Tekstil', 'url' => '/product-category/tekstil'],
                 ]],
             ],
+            // Şube konumları (iletişim haritası). Etiket, iletişim metnindeki "Şube 1" vb. ile eşleşir.
+            'store_pins' => [
+                ['label' => 'Şube 1', 'city' => 'Girne', 'lat' => '35.3268', 'lng' => '33.3084'],
+                ['label' => 'Şube 2', 'city' => 'Alsancak', 'lat' => '35.3542', 'lng' => '33.2102'],
+                ['label' => 'Şube 3', 'city' => 'İskele', 'lat' => '35.2675', 'lng' => '33.9153'],
+            ],
             'contact_title' => 'İletşim',
             'copyright' => '© :yil Lusso Home Concept. All rights reserved',
             'credit' => 'Web Site By Amesis Dijital Ajans',
@@ -151,10 +157,29 @@ class SiteContent
                         $store['lines'][] = $line;
                     }
                 }
-                $store['map'] = 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($place.', Kıbrıs');
+                $pin = self::pin($label);
+                $store['city'] = $pin['city'] ?? null;
+                $store['lat'] = isset($pin['lat']) && is_numeric($pin['lat']) ? (float) $pin['lat'] : null;
+                $store['lng'] = isset($pin['lng']) && is_numeric($pin['lng']) ? (float) $pin['lng'] : null;
+                $store['map'] = $store['lat'] !== null
+                    ? 'https://www.google.com/maps/dir/?api=1&destination='.$store['lat'].','.$store['lng']
+                    : 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($place.', Kıbrıs');
 
                 return $store;
             })->values();
+    }
+
+    /** Etikete göre şube konumu ("Şube 1" = "şube  1"). */
+    private static function pin(string $label): ?array
+    {
+        $norm = fn ($s) => mb_strtolower(preg_replace('/\s+/u', '', (string) $s));
+        foreach ((array) self::get('store_pins', []) as $p) {
+            if ($norm($p['label'] ?? '') === $norm($label)) {
+                return $p;
+            }
+        }
+
+        return null;
     }
 
     public static function save(array $data): void

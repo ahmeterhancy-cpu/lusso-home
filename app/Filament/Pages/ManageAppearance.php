@@ -157,6 +157,16 @@ class ManageAppearance extends Page implements HasSchemas
                         TextInput::make('credit')->label('Yapımcı yazısı'),
                         TextInput::make('credit_url')->label('Yapımcı bağlantısı')->url(),
                     ]),
+                    Section::make('Şube konumları (iletişim haritası)')
+                        ->description('Etiket, iletişim metnindeki şube adıyla aynı olmalı (ör. "Şube 1"). Koordinatı Google Haritalar\'da noktaya sağ tıklayıp kopyalayabilirsiniz.')
+                        ->schema([
+                            Repeater::make('store_pins')->hiddenLabel()->columns(4)->schema([
+                                TextInput::make('label')->label('Etiket')->required(),
+                                TextInput::make('city')->label('Bölge / şehir'),
+                                TextInput::make('lat')->label('Enlem')->numeric()->required(),
+                                TextInput::make('lng')->label('Boylam')->numeric()->required(),
+                            ])->addActionLabel('Konum ekle')->reorderable(false),
+                        ]),
                 ]),
             ]),
         ])->statePath('data');
@@ -169,7 +179,7 @@ class ManageAppearance extends Page implements HasSchemas
         unset($data['home_grid_category']);
 
         // Filament tekrarlayıcıları öğeleri rastgele anahtarlarla döndürür: düz listeye çevir.
-        foreach (['trio', 'info', 'strip', 'header_lines', 'topbar_links', 'menu_extra', 'footer_columns'] as $k) {
+        foreach (['trio', 'info', 'strip', 'header_lines', 'topbar_links', 'menu_extra', 'footer_columns', 'store_pins'] as $k) {
             $data[$k] = array_values((array) ($data[$k] ?? []));
         }
         $data['header_lines'] = array_values(array_filter(array_map(fn ($l) => trim((string) (is_array($l) ? ($l['text'] ?? '') : $l)), $data['header_lines'])));

@@ -8,7 +8,6 @@
         $digits = preg_replace('/\D/', '', $s['phones'][0] ?? '');
         // cep numarası (05…) ise WhatsApp bağlantısı da verilir
         $s['wa'] = str_starts_with($digits, '05') ? '90'.substr($digits, 1) : null;
-        $s['embed'] = 'https://www.google.com/maps?q='.rawurlencode($s['place'].', Kıbrıs').'&output=embed';
         $s['key'] = $s['label'].' – '.$s['place'];
 
         return $s;
@@ -16,7 +15,10 @@
     $cEmail = $cStores->pluck('emails')->flatten()->first() ?: setting('email');
     $cWa = preg_replace('/\D/', '', setting('whatsapp', '905391099900'));
     $cPhone = setting('support_phone', '+90 539 109 99 00');
-    $firstEmbed = setting('map_embed') ?: ($cStores->first()['embed'] ?? 'https://www.google.com/maps?q=Lusso+Home+Concept+Girne&output=embed');
+    // Haritadaki pimler: konumu girilmiş şubeler (i = kart sırası)
+    $cPins = $cStores->values()
+        ->map(fn ($s, $i) => ['i' => $i, 'label' => $s['city'] ?: $s['label'], 'sub' => $s['label'], 'lat' => $s['lat'], 'lng' => $s['lng']])
+        ->filter(fn ($p) => $p['lat'] !== null)->values();
 @endphp
 
 <section class="wrap ct-head">
@@ -32,13 +34,13 @@
     </div>
 </section>
 
-{{-- Şubeler: karta tıklayınca harita o şubeyi gösterir --}}
+{{-- Şubeler: hepsi tek haritada; karta ya da pime tıklayınca o şube öne çıkar --}}
 <section class="wrap ct-stores-wrap" data-ct>
     <div class="ct-stores">
-        @foreach ($cStores as $i => $s)
-            <article @class(['ct-store', 'active' => $i === 0]) data-ct-store data-embed="{{ $i === 0 ? $firstEmbed : $s['embed'] }}">
-                <button type="button" class="ct-store-pick" data-ct-pick aria-pressed="{{ $i === 0 ? 'true' : 'false' }}">
-                    <span class="ct-store-label">{{ icon('pin') }} {{ $s['label'] }}</span>
+        @foreach ($cStores->values() as $i => $s)
+            <article class="ct-store" data-ct-store="{{ $i }}">
+                <button type="button" class="ct-store-pick" data-ct-pick aria-pressed="false">
+                    <span class="ct-store-label">{{ icon('pin') }} {{ $s['label'] }}@if ($s['city']) · {{ $s['city'] }}@endif</span>
                     <span class="ct-store-place serif">{{ $s['place'] }}</span>
                     @if ($s['note'])<span class="ct-store-note">{{ $s['note'] }}</span>@endif
                     @foreach ($s['lines'] as $line)<span class="ct-store-note">{{ $line }}</span>@endforeach
@@ -55,7 +57,9 @@
         @endforeach
     </div>
     <div class="ct-map">
-        <iframe src="{{ $firstEmbed }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mağaza haritası" data-ct-map></iframe>
+        <div class="ct-mapbox" role="region" aria-label="Mağazalarımızın haritası" data-ct-map data-pins="{{ json_encode($cPins, JSON_UNESCAPED_UNICODE) }}"></div>
+        <p class="ct-map-hint">Bir mağazaya dokunun</p>
+        <p class="ct-map-fail" hidden>Harita yüklenemedi. Mağaza kartlarındaki <b>Yol tarifi</b> bağlantısını kullanabilirsiniz.</p>
     </div>
 </section>
 

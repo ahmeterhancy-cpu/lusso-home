@@ -322,19 +322,102 @@
     });
   });
 
-  /* ---- iletişim: şube kartına tıklayınca harita o şubeyi gösterir ---- */
+  /* ---- iletişim: tüm şubeler tek haritada (MapLibre + OpenFreeMap, anahtar gerektirmez) ---- */
   var ct = $('[data-ct]');
   if (ct) {
-    var map = $('[data-ct-map]', ct), cards = $$('[data-ct-store]', ct);
+    var box = $('[data-ct-map]', ct), cards = $$('[data-ct-store]', ct), pins = [], pinEls = {}, ctMap = null;
+    try { pins = JSON.parse(box.dataset.pins || '[]'); } catch (err) { pins = []; }
+
+    var activate = function (i, fly) {
+      cards.forEach(function (c) {
+        var on = Number(c.dataset.ctStore) === i;
+        c.classList.toggle('active', on);
+        $('[data-ct-pick]', c).setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      Object.keys(pinEls).forEach(function (k) { pinEls[k].dataset.state = Number(k) === i ? 'on' : 'dim'; });
+      var p = pins.filter(function (x) { return x.i === i; })[0];
+      if (fly && ctMap && p) ctMap.flyTo({ center: [p.lng, p.lat], zoom: 13.5, speed: 1.4 });
+    };
+    var fail = function () { box.parentNode.classList.add('failed'); $('.ct-map-fail', ct).hidden = false; };
+
     cards.forEach(function (card) {
       $('[data-ct-pick]', card).addEventListener('click', function () {
-        cards.forEach(function (c) {
-          c.classList.toggle('active', c === card);
-          $('[data-ct-pick]', c).setAttribute('aria-pressed', c === card ? 'true' : 'false');
-        });
-        if (map.getAttribute('src') !== card.dataset.embed) map.setAttribute('src', card.dataset.embed);
-        if (window.innerWidth < 1025) map.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        activate(Number(card.dataset.ctStore), true);
+        if (window.innerWidth < 1025) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     });
+
+    var start = function () {
+      var ml = window.maplibregl;
+      if (!ml || !pins.length) return fail();
+      var lngs = pins.map(function (p) { return p.lng; }), lats = pins.map(function (p) { return p.lat; });
+      var bounds = pins.length > 1
+        ? [[Math.min.apply(null, lngs), Math.min.apply(null, lats)], [Math.max.apply(null, lngs), Math.max.apply(null, lats)]]
+        : [[pins[0].lng - .05, pins[0].lat - .03], [pins[0].lng + .05, pins[0].lat + .03]];
+      ctMap = new ml.Map({
+        container: box,
+        style: 'https://tiles.openfreemap.org/styles/positron',
+        bounds: bounds,
+        fitBoundsOptions: { padding: { top: 90, bottom: 70, left: 150, right: 150 }, maxZoom: 13 },
+        attributionControl: { compact: true },
+        cooperativeGestures: true,
+        dragRotate: false,
+        pitchWithRotate: false,
+        minZoom: 7,
+        maxZoom: 17
+      });
+      ctMap.touchZoomRotate.disableRotation();
+      ctMap.addControl(new ml.NavigationControl({ showCompass: false }), 'top-right');
+      ctMap.on('error', function (e) { if (!ctMap.isStyleLoaded() && e && e.error) fail(); });
+      ctMap.on('load', function () { // yer adları Türkçe/Latin
+        (ctMap.getStyle().layers || []).forEach(function (l) {
+          if (l.type === 'symbol' && ctMap.getLayoutProperty(l.id, 'text-field')) {
+            ctMap.setLayoutProperty(l.id, 'text-field', ['coalesce', ['get', 'name:tr'], ['get', 'name:latin'], ['get', 'name']]);
+          }
+        });
+      });
+      pins.forEach(function (p) {
+        // hemen doğusunda başka şube varsa etiketi sola yaz (çakışmasın)
+        var left = pins.some(function (o) { return o !== p && o.lng > p.lng && o.lng - p.lng < 0.2 && Math.abs(o.lat - p.lat) < 0.08; });
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'ct-pin' + (left ? ' left' : '');
+        el.dataset.state = 'idle';
+        el.setAttribute('aria-label', p.sub + ', ' + p.label);
+        el.innerHTML = '<span class="ct-pin-dot"></span><span class="ct-pin-text"><b></b><small></small></span>';
+        el.querySelector('b').textContent = p.label;
+        el.querySelector('small').textContent = p.sub;
+        el.addEventListener('click', function () {
+          activate(p.i, true);
+          var card = cards.filter(function (c) { return Number(c.dataset.ctStore) === p.i; })[0];
+          if (card && window.innerWidth < 1025) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        pinEls[p.i] = el;
+        new ml.Marker({ element: el, anchor: left ? 'right' : 'left', offset: [left ? 11 : -11, 0] }).setLngLat([p.lng, p.lat]).addTo(ctMap);
+      });
+    };
+
+    // Kütüphaneyi yalnız bu sayfada, harita görünür olunca yükle
+    var loaded = false;
+    var load = function () {
+      if (loaded) return;
+      loaded = true;
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css';
+      document.head.appendChild(css);
+      var s = document.createElement('script');
+      s.src = 'https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js';
+      s.onload = start;
+      s.onerror = fail;
+      document.head.appendChild(s);
+    };
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { io.disconnect(); load(); } }, { rootMargin: '300px' });
+      io.observe(box);
+      setTimeout(load, 3000); // gözlemci tetiklenmezse (gizli sekme vb.) yine de yükle
+    } else {
+      load();
+    }
   }
 })();
