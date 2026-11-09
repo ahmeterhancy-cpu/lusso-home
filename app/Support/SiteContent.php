@@ -81,7 +81,7 @@ class SiteContent
             ],
             // Şube konumları (iletişim haritası). Etiket, iletişim metnindeki "Şube 1" vb. ile eşleşir.
             'store_pins' => [
-                ['label' => 'Şube 1', 'city' => 'Girne', 'lat' => '35.3268', 'lng' => '33.3084'],
+                ['label' => 'Şube 1', 'city' => 'Girne', 'lat' => '35.3279792', 'lng' => '33.3087578'],
                 ['label' => 'Şube 2', 'city' => 'Alsancak', 'lat' => '35.3542', 'lng' => '33.2102'],
                 ['label' => 'Şube 3', 'city' => 'İskele', 'lat' => '35.2675', 'lng' => '33.9153'],
             ],
