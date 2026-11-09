@@ -139,7 +139,7 @@ class ProductCsv
     }
 
     /**
-     * @param  array<int>  $skipCategoryIds  bu kategorilerdeki ürünlere dokunma (Drive senkronu)
+     * @param  array<int>  $skipCategoryIds  bu kategorilerdeki ürünlerin STOĞUNA dokunma, fiyat yine güncellenir (Drive senkronu)
      * @return array{updated: int, unchanged: int, skipped: int, notFound: array<int, string>, errors: array<int, string>}
      */
     public function import(string $path, array $skipCategoryIds = []): array
@@ -186,11 +186,8 @@ class ProductCsv
 
                 continue;
             }
-            if ($skipCategoryIds && array_intersect($skipCategoryIds, $p->categoryIds())) {
-                $res['skipped']++; // kategorisi Drive güncellemesine kapalı
-
-                continue;
-            }
+            // Kategorisi "Drive'dan stok" kapalıysa: fiyat güncellenir, stok (adet + stokta) dokunulmaz.
+            $keepStock = $skipCategoryIds && array_intersect($skipCategoryIds, $p->categoryIds());
 
             $changes = [];
             if (isset($idx['fiyat']) && ($v = $this->parseNum($get('fiyat'))) !== null) {
@@ -216,6 +213,10 @@ class ProductCsv
                 if (isset($idx[$col]) && ($b = $this->parseBool($get($col))) !== null) {
                     $changes[$field] = $b;
                 }
+            }
+            if ($keepStock && (array_key_exists('stock_qty', $changes) || array_key_exists('in_stock', $changes))) {
+                unset($changes['stock_qty'], $changes['in_stock']);
+                $res['skipped']++;
             }
             $price = $changes['price'] ?? (float) $p->price;
             if (! empty($changes['sale_price']) && $changes['sale_price'] >= $price) {

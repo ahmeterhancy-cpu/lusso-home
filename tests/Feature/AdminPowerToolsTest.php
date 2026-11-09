@@ -154,13 +154,15 @@ class AdminPowerToolsTest extends TestCase
         Setting::put(['sheet_url' => 'https://docs.google.com/spreadsheets/d/X/edit']);
         $r = app(SheetSync::class)->run(true);
 
-        $this->assertSame(1, $r['updated']);
+        $this->assertSame(2, $r['updated']);
         $this->assertSame(1, $r['skipped']);
-        $this->assertStringContainsString('1 ürün kategorisi Drive güncellemesine kapalı', $r['summary']);
+        $this->assertStringContainsString('1 ürünün stoğu', $r['summary']);
         $this->assertSame('2500.00', $this->p->refresh()->price);
+        $this->assertSame(7, $this->p->stock_qty);
         $manual->refresh();
-        $this->assertSame('500.00', $manual->price);
-        $this->assertSame(3, $manual->stock_qty);
+        $this->assertSame('999.00', $manual->price);   // fiyat geçer
+        $this->assertSame(3, $manual->stock_qty);      // stok geçmez
+        $this->assertTrue($manual->in_stock);
 
         // Elle Excel yüklemesi bu kuralı uygulamaz (bilinçli istisna)
         $csv = tempnam(sys_get_temp_dir(), 'c').'.csv';

@@ -60,8 +60,8 @@ class CategoryResource extends Resource
                         ->helperText('Ana kategoriler menüde, alt kategoriler açılır listede görünür.'),
                     Toggle::make('is_trend')->label('"Trend Kategoriler"de göster'),
                     TextInput::make('trend_sort')->label('Trend sırası')->numeric()->default(0),
-                    Toggle::make('sheet_sync')->label('Drive dosyasından fiyat / stok güncellensin')->default(true)
-                        ->helperText('Kapalıysa bu kategorideki ve alt kategorilerindeki ürünler Drive senkronundan etkilenmez; fiyat ve stokları elle yönetilir.'),
+                    Toggle::make('sheet_sync')->label('Stok Drive dosyasından güncellensin')->default(true)
+                        ->helperText('Kapalıysa bu kategorideki ve alt kategorilerindeki ürünlerin stoğu Drive dosyasından değişmez (elle yönetilir). Fiyat her durumda Drive dosyasından güncellenir.'),
                 ]),
             ]),
             \App\Filament\Support\SeoFields::section(),
@@ -82,13 +82,13 @@ class CategoryResource extends Resource
                 ToggleColumn::make('in_menu')->label('Menüde')->afterStateUpdated(fn () => Cache::forget('menu-tree')),
                 ToggleColumn::make('is_trend')->label('Trend'),
                 ToggleColumn::make('is_active')->label('Aktif')->afterStateUpdated(fn () => Cache::forget('menu-tree')),
-                ToggleColumn::make('sheet_sync')->label('Drive güncellemesi')
-                    ->tooltip('Kapalı: bu kategori ve alt kategorilerindeki ürünlerin fiyat / stoğu Drive dosyasından değişmez'),
+                ToggleColumn::make('sheet_sync')->label('Drive stok')
+                    ->tooltip('Kapalı: bu kategori ve alt kategorilerindeki ürünlerin stoğu Drive dosyasından değişmez; fiyat yine güncellenir'),
             ])
             ->filters([
                 TernaryFilter::make('parent_id')->label('Düzey')->nullable()
                     ->trueLabel('Alt kategoriler')->falseLabel('Ana kategoriler'),
-                TernaryFilter::make('sheet_sync')->label('Drive güncellemesi')->trueLabel('Alanlar')->falseLabel('Almayanlar'),
+                TernaryFilter::make('sheet_sync')->label('Drive stok')->trueLabel('Stoğu Drive dosyasından gelenler')->falseLabel('Stoğu elle yönetilenler'),
             ])
             ->recordActions([EditAction::make()]);
     }

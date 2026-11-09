@@ -67,7 +67,7 @@ class SheetSync
             $result = $this->csv->import($tmp, \App\Models\Category::sheetSyncExcludedIds());
             @unlink($tmp);
             $summary = "{$result['updated']} ürün güncellendi, {$result['unchanged']} değişmedi"
-                .($result['skipped'] ? ', '.$result['skipped'].' ürün kategorisi Drive güncellemesine kapalı olduğu için atlandı' : '')
+                .($result['skipped'] ? ', '.$result['skipped'].' ürünün stoğu kategorisi Drive stok güncellemesine kapalı olduğu için değiştirilmedi (fiyatı güncellendi)' : '')
                 .($result['notFound'] ? ', '.count($result['notFound']).' stok kodu sitede bulunamadı' : '')
                 .($result['errors'] ? ', '.count($result['errors']).' uyarı' : '').'.';
             $ok = empty($result['errors']) || $result['updated'] > 0;
