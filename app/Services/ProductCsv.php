@@ -138,16 +138,19 @@ class ProductCsv
         return [str_getcsv($first, $delim), $rows];
     }
 
-    /** @return array{updated: int, unchanged: int, notFound: array<int, string>, errors: array<int, string>} */
-    public function import(string $path): array
+    /**
+     * @param  array<int>  $skipCategoryIds  bu kategorilerdeki ürünlere dokunma (Drive senkronu)
+     * @return array{updated: int, unchanged: int, skipped: int, notFound: array<int, string>, errors: array<int, string>}
+     */
+    public function import(string $path, array $skipCategoryIds = []): array
     {
         [$head, $rows] = $this->read($path);
 
-        return $this->apply($head, $rows);
+        return $this->apply($head, $rows, $skipCategoryIds);
     }
 
-    /** @return array{updated: int, unchanged: int, notFound: array<int, string>, errors: array<int, string>} */
-    public function apply(array $head, iterable $rows): array
+    /** @return array{updated: int, unchanged: int, skipped: int, notFound: array<int, string>, errors: array<int, string>} */
+    public function apply(array $head, iterable $rows, array $skipCategoryIds = []): array
     {
         $idx = [];
         foreach ($head as $i => $h) {
@@ -159,10 +162,10 @@ class ProductCsv
             }
         }
         if (! isset($idx['id']) && ! isset($idx['stok_kodu'])) {
-            return ['updated' => 0, 'unchanged' => 0, 'notFound' => [], 'errors' => ['Dosyada "Stok Kodu" (veya id) sütunu bulunamadı. İlk satır sütun başlıkları olmalı: Stok Kodu, Fiyat, Stok …']];
+            return ['updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'notFound' => [], 'errors' => ['Dosyada "Stok Kodu" (veya id) sütunu bulunamadı. İlk satır sütun başlıkları olmalı: Stok Kodu, Fiyat, Stok …']];
         }
 
-        $res = ['updated' => 0, 'unchanged' => 0, 'notFound' => [], 'errors' => []];
+        $res = ['updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'notFound' => [], 'errors' => []];
         $line = 1;
         foreach ($rows as $row) {
             $line++;
@@ -180,6 +183,11 @@ class ProductCsv
             }
             if (! $p) {
                 $res['notFound'][] = "Satır $line: ".(trim((string) $get('stok_kodu')) ?: trim((string) $get('id')) ?: '?');
+
+                continue;
+            }
+            if ($skipCategoryIds && array_intersect($skipCategoryIds, $p->categoryIds())) {
+                $res['skipped']++; // kategorisi Drive güncellemesine kapalı
 
                 continue;
             }

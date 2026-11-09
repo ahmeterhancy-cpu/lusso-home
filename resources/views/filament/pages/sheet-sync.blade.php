@@ -39,6 +39,7 @@
                 <li>Kabul edilen başlıklar: <em>Stok Kodu / SKU / Barkod</em>, <em>Fiyat / Satış Fiyatı</em>, <em>İndirimli Fiyat</em>, <em>Stok / Adet / Miktar</em>, <em>Stokta</em>, <em>Yayında</em> (Evet/Hayır).</li>
                 <li>Stok 0 olan ürün "stokta yok" olur ve sepete eklenemez; adet girilince tekrar satışa açılır.</li>
                 <li>Dosyada olmayan ürünlere dokunulmaz; yeni ürün oluşturulmaz, ürün silinmez.</li>
+                <li>Bazı kategorilerin fiyat / stoğunu elle yönetmek için: Katalog → Kategoriler → <strong>"Drive güncellemesi"</strong> anahtarını kapatın. O kategori ve alt kategorilerindeki ürünler dosyada olsa bile atlanır.</li>
                 <li>Google E-Tablo da olur, Drive'a yüklenmiş .xlsx / .csv dosyası da. Birden çok sayfa varsa ilk sayfa okunur.</li>
                 <li>Bağlantıyı bilen herkes dosyayı görebilir; dosyada fiyat ve stok dışında hassas bilgi tutmayın.</li>
             </ul>

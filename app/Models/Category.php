@@ -14,7 +14,18 @@ class Category extends Model
 
     protected $guarded = [];
 
-    protected $casts = ['is_active' => 'bool', 'in_menu' => 'bool', 'is_trend' => 'bool'];
+    protected $casts = ['is_active' => 'bool', 'in_menu' => 'bool', 'is_trend' => 'bool', 'sheet_sync' => 'bool'];
+
+    /** Drive senkronuna kapalı kategoriler + tüm alt kategorileri. */
+    public static function sheetSyncExcludedIds(): array
+    {
+        $ids = [];
+        foreach (self::where('sheet_sync', false)->get() as $c) {
+            $ids = array_merge($ids, $c->descendantIds());
+        }
+
+        return array_values(array_unique($ids));
+    }
 
     protected static function booted(): void
     {

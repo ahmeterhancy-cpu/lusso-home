@@ -143,6 +143,32 @@ class AdminPowerToolsTest extends TestCase
         $this->assertSame('2500.00', $this->p->refresh()->price);
     }
 
+    public function test_categories_can_be_excluded_from_sheet_sync(): void
+    {
+        $outlet = Category::create(['name' => 'Outlet', 'slug' => 'outlet', 'sheet_sync' => false]);
+        $sub = Category::create(['name' => 'Outlet Sofra', 'slug' => 'outlet-sofra', 'parent_id' => $outlet->id]);
+        $manual = Product::create(['name' => 'Elle', 'slug' => 'elle', 'sku' => 'EL-1', 'price' => 500, 'stock_qty' => 3]);
+        $manual->categories()->attach($sub); // alt kategori de hariç sayılır
+
+        Http::fake(['docs.google.com/*' => Http::response("Stok Kodu,Fiyat,Stok\nYE-1,2500,7\nEL-1,999,0\n")]);
+        Setting::put(['sheet_url' => 'https://docs.google.com/spreadsheets/d/X/edit']);
+        $r = app(SheetSync::class)->run(true);
+
+        $this->assertSame(1, $r['updated']);
+        $this->assertSame(1, $r['skipped']);
+        $this->assertStringContainsString('1 ürün kategorisi Drive güncellemesine kapalı', $r['summary']);
+        $this->assertSame('2500.00', $this->p->refresh()->price);
+        $manual->refresh();
+        $this->assertSame('500.00', $manual->price);
+        $this->assertSame(3, $manual->stock_qty);
+
+        // Elle Excel yüklemesi bu kuralı uygulamaz (bilinçli istisna)
+        $csv = tempnam(sys_get_temp_dir(), 'c').'.csv';
+        file_put_contents($csv, "Stok Kodu;Fiyat\nEL-1;600\n");
+        app(ProductCsv::class)->import($csv);
+        $this->assertSame('600.00', $manual->refresh()->price);
+    }
+
     public function test_sheet_sync_reports_private_file(): void
     {
         Http::fake(['*' => Http::response('<html><body>Google Drive – oturum açın</body></html>')]);

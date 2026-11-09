@@ -60,6 +60,8 @@ class CategoryResource extends Resource
                         ->helperText('Ana kategoriler menüde, alt kategoriler açılır listede görünür.'),
                     Toggle::make('is_trend')->label('"Trend Kategoriler"de göster'),
                     TextInput::make('trend_sort')->label('Trend sırası')->numeric()->default(0),
+                    Toggle::make('sheet_sync')->label('Drive dosyasından fiyat / stok güncellensin')->default(true)
+                        ->helperText('Kapalıysa bu kategorideki ve alt kategorilerindeki ürünler Drive senkronundan etkilenmez; fiyat ve stokları elle yönetilir.'),
                 ]),
             ]),
             \App\Filament\Support\SeoFields::section(),
@@ -80,10 +82,13 @@ class CategoryResource extends Resource
                 ToggleColumn::make('in_menu')->label('Menüde')->afterStateUpdated(fn () => Cache::forget('menu-tree')),
                 ToggleColumn::make('is_trend')->label('Trend'),
                 ToggleColumn::make('is_active')->label('Aktif')->afterStateUpdated(fn () => Cache::forget('menu-tree')),
+                ToggleColumn::make('sheet_sync')->label('Drive güncellemesi')
+                    ->tooltip('Kapalı: bu kategori ve alt kategorilerindeki ürünlerin fiyat / stoğu Drive dosyasından değişmez'),
             ])
             ->filters([
                 TernaryFilter::make('parent_id')->label('Düzey')->nullable()
                     ->trueLabel('Alt kategoriler')->falseLabel('Ana kategoriler'),
+                TernaryFilter::make('sheet_sync')->label('Drive güncellemesi')->trueLabel('Alanlar')->falseLabel('Almayanlar'),
             ])
             ->recordActions([EditAction::make()]);
     }

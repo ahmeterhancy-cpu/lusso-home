@@ -64,14 +64,15 @@ class SheetSync
             }
             $tmp = tempnam(sys_get_temp_dir(), 'lusso-sheet-');
             file_put_contents($tmp, $body);
-            $result = $this->csv->import($tmp);
+            $result = $this->csv->import($tmp, \App\Models\Category::sheetSyncExcludedIds());
             @unlink($tmp);
             $summary = "{$result['updated']} ürün güncellendi, {$result['unchanged']} değişmedi"
+                .($result['skipped'] ? ', '.$result['skipped'].' ürün kategorisi Drive güncellemesine kapalı olduğu için atlandı' : '')
                 .($result['notFound'] ? ', '.count($result['notFound']).' stok kodu sitede bulunamadı' : '')
                 .($result['errors'] ? ', '.count($result['errors']).' uyarı' : '').'.';
             $ok = empty($result['errors']) || $result['updated'] > 0;
         } catch (\Throwable $e) {
-            $result = ['updated' => 0, 'unchanged' => 0, 'notFound' => [], 'errors' => [$e->getMessage()]];
+            $result = ['updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'notFound' => [], 'errors' => [$e->getMessage()]];
             $summary = 'HATA: '.$e->getMessage();
             $ok = false;
             Log::warning('[Drive senkron] '.$e->getMessage());
