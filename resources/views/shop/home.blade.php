@@ -27,7 +27,7 @@
                     <p class="eyebrow" @if (str_starts_with((string) site('subtitle'), '#')) lang="en" @endif>{{ site('subtitle') }}</p>
                     <h1 class="serif">{{ $lines ? implode(' ', $lines) : 'Evinizi küçük dokunuşlarla daha güzel, daha şık ve daha lükse ulaştırın.' }}</h1>
                     <div class="hm-hero-cta">
-                        <a href="{{ route('shop') }}" class="mbtn mbtn-dark">Mağazayı keşfet {{ icon('arrow-right') }}</a>
+                        <a href="{{ route('shop') }}" class="mbtn mbtn-dark">Ürünleri Keşfet {{ icon('arrow-right') }}</a>
                         @if (! empty($trio[0]['link']) && ($trioNames[0] ?? null))
                             <a href="{{ url($trio[0]['link']) }}" class="mbtn mbtn-line">{{ $trioNames[0] }}</a>
                         @endif
