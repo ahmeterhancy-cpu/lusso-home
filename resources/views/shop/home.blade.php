@@ -12,7 +12,7 @@
 @if ($S::show('slider'))
     <section class="hm-hero">
         <div class="wrap">
-            <div class="hs" data-hero>
+            <div @class(['hs', 'has-gal' => $slides->count() > 1 && $slides->every(fn ($s) => $s->isTall())]) data-hero>
                 <div class="hs-slides" data-hs-stage>
                     @forelse ($slides as $i => $slide)
                         <a href="{{ $slide->link ?: route('shop') }}" @class(['hs-slide', 'hs-tall' => $slide->isTall(), 'active' => $i === 0]) data-hs-slide @if ($i) aria-hidden="true" tabindex="-1" @endif>
@@ -26,6 +26,17 @@
                         <span class="hs-slide active"></span>
                     @endforelse
                 </div>
+
+                @if ($slides->count() > 1 && $slides->every(fn ($s) => $s->isTall()))
+                    {{-- masaüstü vitrini: etkin görsel büyük, sıradaki ikisi yanında küçük (mobilde gizli) --}}
+                    <div class="hs-gal" aria-hidden="true">
+                        @foreach ($slides as $i => $slide)
+                            <a href="{{ $slide->link ?: route('shop') }}" class="hs-tile" data-hs-tile="{{ $i }}" data-pos="{{ $i }}" tabindex="-1">
+                                <img src="{{ media_url($slide->image) }}" alt="">
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
 
                 <div class="hs-card">
                     <p class="eyebrow" @if (str_starts_with((string) site('subtitle'), '#')) lang="en" @endif>{{ site('subtitle') }}</p>
