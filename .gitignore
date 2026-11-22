@@ -29,3 +29,4 @@ Thumbs.db
 /_referans
 # Ürün görselleri (eski siteden ~5000 dosya; yayına çıkarken ayrıca karar verilecek)
 /storage/app/gorsel-listesi.txt
+/canli-aktarim

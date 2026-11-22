@@ -30,6 +30,9 @@ class ImportWoo extends Command
 
     private string $base;
 
+    /** @var array<int,int> bu çalıştırmada eski sitede görülen ürün wc_id'leri */
+    private array $seen = [];
+
     public function handle(): int
     {
         ini_set('memory_limit', '1024M');
@@ -39,6 +42,13 @@ class ImportWoo extends Command
             ? Category::whereNotNull('wc_id')->pluck('id', 'wc_id')->all()
             : $this->importCategories();
         $this->importProducts($catMap);
+
+        // Eski sitede artık listelenmeyen ürünler (silinmiş/gizlenmiş): yalnız raporlanır, dokunulmaz.
+        if ((int) $this->option('baslangic') <= 1 && ! (int) $this->option('bitis')) {
+            $missing = Product::whereNotNull('wc_id')->whereNotIn('wc_id', $this->seen)->pluck('wc_id')->all();
+            file_put_contents(storage_path('app/aktar-eskide-yok.json'), json_encode($missing));
+            $this->info(count($missing).' ürün eski sitede artık görünmüyor (storage/app/aktar-eskide-yok.json).');
+        }
 
         $this->info('Bitti: '.Category::count().' kategori, '.Product::count().' ürün.');
 
@@ -71,8 +81,11 @@ class ImportWoo extends Command
                 'name' => html_entity_decode($c['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'slug' => $this->uniqueSlug(Category::class, urldecode($c['slug']), $c['id']),
                 'description' => $c['description'] ?: null,
-                'sort' => $i,
             ]);
+            // Sıra yalnız yeni kategoride verilir; panelde elle ayarlanan menü sırası korunur.
+            if ($cat->wasRecentlyCreated) {
+                $cat->update(['sort' => $i]);
+            }
             if (! empty($c['image']['src']) && ! $cat->image && ! $this->option('gorselsiz')) {
                 $path = $this->download([$c['image']['src']], 'kategoriler/'.$c['id'])[0] ?? null;
                 if ($path) {
@@ -104,6 +117,7 @@ class ImportWoo extends Command
 
             foreach (array_values($rows) as $i => $p) {
                 $when = $base->copy()->subMinutes(($page - 1) * 50 + $i);
+                $this->seen[] = (int) $p['id'];
                 try {
                     $this->importOne($p, $catMap, $when);
                 } catch (\Throwable $e) {
@@ -160,11 +174,19 @@ class ImportWoo extends Command
 
         // --liste: görsel kaydını hemen aç, dosyayı indirmek için listeye yaz
         // (eski sunucuda PHP indirmesi takılıyor; liste curl ile paralel indirilir: tools/gorsel-indir.sh).
+        // Görsel sayısı eski siteyle tutmuyorsa (görsel eklenmiş/çıkarılmış) liste baştan kurulur, dosyalar yeniden iner.
+        $resync = $p['images'] && $product->images()->count() > 0 && $product->images()->count() !== count($p['images']);
+        if ($this->option('liste') && $resync) {
+            $product->images()->delete();
+        }
         if ($this->option('liste') && $product->images()->count() === 0 && $p['images']) {
             foreach (array_values($p['images']) as $i => $img) {
                 $url = $this->pickSize($img);
                 $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION)) ?: 'jpg';
                 $rel = 'urunler/'.$p['id'].($i ? '-'.$i : '').'.'.$ext;
+                if ($resync) {
+                    @unlink(public_path('medya/'.$rel));
+                }
                 $product->images()->create(['path' => $rel, 'source_url' => $url, 'sort' => $i]);
                 if (! is_file(public_path('medya/'.$rel))) {
                     file_put_contents(storage_path('app/gorsel-listesi.txt'), $url."\t".$rel."\n", FILE_APPEND | LOCK_EX);

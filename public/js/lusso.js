@@ -135,7 +135,13 @@
       void bars[i].offsetWidth; // dolma animasyonu baştan başlasın
       bars[i].classList.add('active');
       if (cur) cur.textContent = (i < 9 ? '0' : '') + (i + 1);
+      tiles.forEach(function (t, k) { t.dataset.pos = (k - i + slides.length) % slides.length; });
     }
+    // masaüstü vitrini: küçük karoya tıklayınca o görsel öne gelir
+    var tiles = $$('[data-hs-tile]', hs);
+    tiles.forEach(function (t, k) {
+      t.addEventListener('click', function (e) { if (k !== i) { e.preventDefault(); go(k); } });
+    });
     // otomatik geçiş: etkin çizginin CSS animasyonu bitince (hareket azaltılmışsa animasyon yok → durur)
     bars.forEach(function (b, k) {
       b.addEventListener('click', function () { go(k); });
