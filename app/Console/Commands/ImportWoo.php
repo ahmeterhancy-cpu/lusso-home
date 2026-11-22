@@ -30,6 +30,9 @@ class ImportWoo extends Command
 
     private string $base;
 
+    /** @var array<int,int> bu çalıştırmada eski sitede görülen ürün wc_id'leri */
+    private array $seen = [];
+
     public function handle(): int
     {
         ini_set('memory_limit', '1024M');
@@ -39,6 +42,13 @@ class ImportWoo extends Command
             ? Category::whereNotNull('wc_id')->pluck('id', 'wc_id')->all()
             : $this->importCategories();
         $this->importProducts($catMap);
+
+        // Eski sitede artık listelenmeyen ürünler (silinmiş/gizlenmiş): yalnız raporlanır, dokunulmaz.
+        if ((int) $this->option('baslangic') <= 1 && ! (int) $this->option('bitis')) {
+            $missing = Product::whereNotNull('wc_id')->whereNotIn('wc_id', $this->seen)->pluck('wc_id')->all();
+            file_put_contents(storage_path('app/aktar-eskide-yok.json'), json_encode($missing));
+            $this->info(count($missing).' ürün eski sitede artık görünmüyor (storage/app/aktar-eskide-yok.json).');
+        }
 
         $this->info('Bitti: '.Category::count().' kategori, '.Product::count().' ürün.');
 
@@ -104,6 +114,7 @@ class ImportWoo extends Command
 
             foreach (array_values($rows) as $i => $p) {
                 $when = $base->copy()->subMinutes(($page - 1) * 50 + $i);
+                $this->seen[] = (int) $p['id'];
                 try {
                     $this->importOne($p, $catMap, $when);
                 } catch (\Throwable $e) {
