@@ -174,11 +174,19 @@ class ImportWoo extends Command
 
         // --liste: görsel kaydını hemen aç, dosyayı indirmek için listeye yaz
         // (eski sunucuda PHP indirmesi takılıyor; liste curl ile paralel indirilir: tools/gorsel-indir.sh).
+        // Görsel sayısı eski siteyle tutmuyorsa (görsel eklenmiş/çıkarılmış) liste baştan kurulur, dosyalar yeniden iner.
+        $resync = $p['images'] && $product->images()->count() > 0 && $product->images()->count() !== count($p['images']);
+        if ($this->option('liste') && $resync) {
+            $product->images()->delete();
+        }
         if ($this->option('liste') && $product->images()->count() === 0 && $p['images']) {
             foreach (array_values($p['images']) as $i => $img) {
                 $url = $this->pickSize($img);
                 $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION)) ?: 'jpg';
                 $rel = 'urunler/'.$p['id'].($i ? '-'.$i : '').'.'.$ext;
+                if ($resync) {
+                    @unlink(public_path('medya/'.$rel));
+                }
                 $product->images()->create(['path' => $rel, 'source_url' => $url, 'sort' => $i]);
                 if (! is_file(public_path('medya/'.$rel))) {
                     file_put_contents(storage_path('app/gorsel-listesi.txt'), $url."\t".$rel."\n", FILE_APPEND | LOCK_EX);
