@@ -15,8 +15,12 @@
             <div class="hs" data-hero>
                 <div class="hs-slides" data-hs-stage>
                     @forelse ($slides as $i => $slide)
-                        <a href="{{ $slide->link ?: route('shop') }}" @class(['hs-slide', 'active' => $i === 0]) data-hs-slide @if ($i) aria-hidden="true" tabindex="-1" @endif>
-                            <img src="{{ media_url($slide->image) }}" alt="{{ $slide->title ?: 'Lusso Home Concept' }}" @if ($i) loading="lazy" @else fetchpriority="high" @endif>
+                        <a href="{{ $slide->link ?: route('shop') }}" @class(['hs-slide', 'hs-tall' => $slide->isTall(), 'active' => $i === 0]) data-hs-slide @if ($i) aria-hidden="true" tabindex="-1" @endif>
+                            @if ($slide->isTall())
+                                {{-- dikey görsel: aynı görselin bulanık hali zemin, kendisi sağda kırpılmadan --}}
+                                <img class="hs-bg" src="{{ media_url($slide->image) }}" alt="" aria-hidden="true" @if ($i) loading="lazy" @endif>
+                            @endif
+                            <img class="hs-img" src="{{ media_url($slide->image) }}" alt="{{ $slide->title ?: 'Lusso Home Concept' }}" @if ($i) loading="lazy" @else fetchpriority="high" @endif>
                         </a>
                     @empty
                         <span class="hs-slide active"></span>
