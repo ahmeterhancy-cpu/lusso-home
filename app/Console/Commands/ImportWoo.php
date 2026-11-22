@@ -81,8 +81,11 @@ class ImportWoo extends Command
                 'name' => html_entity_decode($c['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'slug' => $this->uniqueSlug(Category::class, urldecode($c['slug']), $c['id']),
                 'description' => $c['description'] ?: null,
-                'sort' => $i,
             ]);
+            // Sıra yalnız yeni kategoride verilir; panelde elle ayarlanan menü sırası korunur.
+            if ($cat->wasRecentlyCreated) {
+                $cat->update(['sort' => $i]);
+            }
             if (! empty($c['image']['src']) && ! $cat->image && ! $this->option('gorselsiz')) {
                 $path = $this->download([$c['image']['src']], 'kategoriler/'.$c['id'])[0] ?? null;
                 if ($path) {
