@@ -42,6 +42,17 @@ class Product extends Model
         return $q->where('is_active', true);
     }
 
+    /** Listelerde görünenler: yayındakiler; "stokta olmayanları gizle" açıksa yalnız stoktakiler. */
+    public function scopeListed(Builder $q): Builder
+    {
+        $q->where('is_active', true);
+        if (setting('hide_out_of_stock', '1') === '1') {
+            $q->where('in_stock', true);
+        }
+
+        return $q;
+    }
+
     public function url(): string
     {
         return route('product', $this->slug);

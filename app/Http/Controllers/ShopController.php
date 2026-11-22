@@ -25,10 +25,10 @@ class ShopController extends Controller
             return redirect()->route('search', ['s' => $request->query('s')]);
         }
 
-        $latest = Product::visible()->with(['images', 'categories:id'])->latest('published_at')->take((int) site('latest_count', 8))->get();
-        $featured = Product::visible()->with(['images', 'categories:id'])->where('is_featured', true)->orderBy('sort')->latest('published_at')->take((int) site('featured_count', 12))->get();
+        $latest = Product::listed()->with(['images', 'categories:id'])->latest('published_at')->take((int) site('latest_count', 8))->get();
+        $featured = Product::listed()->with(['images', 'categories:id'])->where('is_featured', true)->orderBy('sort')->latest('published_at')->take((int) site('featured_count', 12))->get();
         if ($featured->isEmpty()) {
-            $featured = Product::visible()->with(['images', 'categories:id'])->whereHas('categories', fn ($q) => $q->where('slug', 'mackenzie-childs'))->latest('published_at')->take((int) site('featured_count', 12))->get();
+            $featured = Product::listed()->with(['images', 'categories:id'])->whereHas('categories', fn ($q) => $q->where('slug', 'mackenzie-childs'))->latest('published_at')->take((int) site('featured_count', 12))->get();
         }
         $trend = Category::active()->where('is_trend', true)->orderBy('trend_sort')->get();
         $tableware = Category::where('slug', setting('home_grid_category', 'sofra-grubu'))->first();
@@ -57,7 +57,7 @@ class ShopController extends Controller
 
     public function shop(Request $request)
     {
-        return $this->listing($request, Product::visible(), null, 'Mağaza');
+        return $this->listing($request, Product::listed(), null, 'Mağaza');
     }
 
     public function category(Request $request, string $path)
@@ -72,13 +72,13 @@ class ShopController extends Controller
     {
         $tag = Tag::where('slug', $slug)->firstOrFail();
 
-        return $this->listing($request, Product::visible()->whereHas('tags', fn ($q) => $q->whereKey($tag->id)), null, $tag->name);
+        return $this->listing($request, Product::listed()->whereHas('tags', fn ($q) => $q->whereKey($tag->id)), null, $tag->name);
     }
 
     public function search(Request $request)
     {
         $s = trim((string) $request->query('s'));
-        $q = Product::visible();
+        $q = Product::listed();
         if ($s !== '') {
             $q->where(fn ($w) => $w->where('name', 'like', "%{$s}%")->orWhere('sku', 'like', "%{$s}%"));
         }
@@ -90,7 +90,7 @@ class ShopController extends Controller
     {
         $ids = $category->descendantIds();
 
-        return Product::visible()->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $ids));
+        return Product::listed()->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $ids));
     }
 
     private function listing(Request $request, Builder $query, ?Category $category, string $title)
@@ -125,12 +125,12 @@ class ShopController extends Controller
 
         $primary = $product->categories->sortByDesc(fn ($c) => $c->parent_id ? 1 : 0)->first();
         $related = $primary
-            ? Product::visible()->with(['images', 'categories:id'])->whereKeyNot($product->id)
+            ? Product::listed()->with(['images', 'categories:id'])->whereKeyNot($product->id)
                 ->whereHas('categories', fn ($q) => $q->whereKey($primary->id))->inRandomOrder()->take(8)->get()
             : collect();
 
-        $prev = Product::visible()->where('published_at', '>', $product->published_at)->oldest('published_at')->first(['slug', 'name']);
-        $next = Product::visible()->where('published_at', '<', $product->published_at)->latest('published_at')->first(['slug', 'name']);
+        $prev = Product::listed()->where('published_at', '>', $product->published_at)->oldest('published_at')->first(['slug', 'name']);
+        $next = Product::listed()->where('published_at', '<', $product->published_at)->latest('published_at')->first(['slug', 'name']);
 
         return view('shop.product', compact('product', 'primary', 'related', 'prev', 'next'));
     }
