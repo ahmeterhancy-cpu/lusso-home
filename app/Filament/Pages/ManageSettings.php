@@ -39,7 +39,7 @@ class ManageSettings extends Page implements HasSchemas
     public ?array $data = [];
 
     /** Açık/kapalı anahtarlar ('1' / '0' olarak saklanır). */
-    private const BOOLS = ['pay_tiko', 'pay_havale', 'pay_kapida', 'tiko_test_mode', 'maintenance'];
+    private const BOOLS = ['pay_tiko', 'pay_havale', 'pay_kapida', 'tiko_test_mode', 'maintenance', 'hide_out_of_stock'];
 
     /** JSON olarak saklanan liste ayarları. */
     private const JSONS = ['shipping_zones'];
@@ -47,7 +47,7 @@ class ManageSettings extends Page implements HasSchemas
     private const KEYS = [
         'site_name', 'meta_description', 'support_phone', 'whatsapp', 'email', 'order_email',
         'facebook', 'instagram', 'footer_contact', 'contact_text', 'map_embed', 'copyright_year',
-        'free_shipping_min', 'shipping_fee', 'shipping_text', 'shipping_zones', 'per_page',
+        'free_shipping_min', 'shipping_fee', 'shipping_text', 'shipping_zones', 'per_page', 'hide_out_of_stock',
         'pay_tiko', 'pay_havale', 'pay_kapida', 'bank_info',
         'tiko_merchant_id', 'tiko_secret_key', 'tiko_password', 'tiko_test_mode',
         'maintenance', 'maintenance_title', 'maintenance_text', 'robots_txt', 'head_code',
@@ -57,7 +57,7 @@ class ManageSettings extends Page implements HasSchemas
     {
         $values = [];
         foreach (self::KEYS as $k) {
-            $v = Setting::map()[$k] ?? null;
+            $v = Setting::map()[$k] ?? ($k === 'hide_out_of_stock' ? '1' : null); // varsayılan açık (eski sitedeki gibi)
             $values[$k] = match (true) {
                 in_array($k, self::BOOLS, true) => $v === '1',
                 in_array($k, self::JSONS, true) => array_values((array) json_decode((string) $v, true)),
@@ -105,6 +105,8 @@ class ManageSettings extends Page implements HasSchemas
                     TextInput::make('shipping_fee')->label('Kargo ücreti (₺)')->numeric()->helperText('0 = her zaman ücretsiz'),
                     Textarea::make('shipping_text')->label('Ürün sayfası "Kargo & Teslimat" sekmesi (HTML)')->rows(4)->columnSpanFull(),
                     TextInput::make('per_page')->label('Kategori sayfasında ürün sayısı')->numeric(),
+                    Toggle::make('hide_out_of_stock')->label('Stokta olmayan ürünleri gizle')->inline(false)
+                        ->helperText('Açıkken tükenen ürünler kategori, arama ve ana sayfa listelerinde görünmez; ürün sayfası bağlantıyla açılmaya devam eder. Stok girilince ürün kendiliğinden listelere döner.'),
                     \Filament\Forms\Components\Repeater::make('shipping_zones')->label('Şehre göre kargo')->columnSpanFull()
                         ->helperText('Tanımlanırsa kasadaki şehir listesi buradan gelir. Boş "ücretsiz kargo alt sınırı" = genel sınır geçerli.')
                         ->schema([

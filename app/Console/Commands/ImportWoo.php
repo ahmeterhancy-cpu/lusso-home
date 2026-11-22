@@ -24,7 +24,8 @@ class ImportWoo extends Command
         {--kategorisiz : Kategorileri yeniden aktarma (paralel çalışmada)}
         {--gorselsiz : Görselleri indirme}
         {--bekle=5 : Sayfalar arası bekleme (sn)}
-        {--liste : Görselleri indirmek yerine storage/app/gorsel-listesi.txt dosyasına yaz}';
+        {--liste : Görselleri indirmek yerine storage/app/gorsel-listesi.txt dosyasına yaz}
+        {--json= : Store API yerine panelden (wc/v3) alınmış ürün dökümü; ör. stokta olmayanlar}';
 
     protected $description = 'Eski WooCommerce sitesinden kategori, ürün ve görselleri aktarır';
 
@@ -38,9 +39,31 @@ class ImportWoo extends Command
         ini_set('memory_limit', '1024M');
         $this->base = rtrim($this->option('kaynak'), '/').'/wp-json/wc/store/v1';
 
-        $catMap = $this->option('kategorisiz')
+        $catMap = $this->option('kategorisiz') || $this->option('json')
             ? Category::whereNotNull('wc_id')->pluck('id', 'wc_id')->all()
             : $this->importCategories();
+
+        // Panel dökümü: Store API stokta olmayanları vermez ("stokta olmayanları gizle" açık).
+        // Döküm tarayıcıda oturum açıkken /wp-json/wc/v3/products?stock_status=outofstock ile alınır.
+        if ($json = $this->option('json')) {
+            $rows = json_decode((string) file_get_contents($json), true) ?: [];
+            $base = \Illuminate\Support\Carbon::parse('2026-11-06 00:00:00'); // stoktakilerden eski
+            $bar = $this->output->createProgressBar(count($rows));
+            foreach (array_values($rows) as $i => $r) {
+                try {
+                    $this->importOne($this->fromPanel($r), $catMap, $base->copy()->subMinutes($i));
+                } catch (\Throwable $e) {
+                    $this->warn("Ürün {$r['id']} aktarılamadı: ".$e->getMessage());
+                }
+                $bar->advance();
+            }
+            $bar->finish();
+            $this->newLine();
+            $this->info(count($rows).' ürün işlendi. Toplam: '.Product::count());
+
+            return self::SUCCESS;
+        }
+
         $this->importProducts($catMap);
 
         // Eski sitede artık listelenmeyen ürünler (silinmiş/gizlenmiş): yalnız raporlanır, dokunulmaz.
@@ -205,6 +228,25 @@ class ImportWoo extends Command
                 }
             }
         }
+    }
+
+    /** Panel (wc/v3) kaydını Store API biçimine çevirir; importOne ikisini aynı işler. */
+    private function fromPanel(array $r): array
+    {
+        return [
+            'id' => $r['id'],
+            'name' => $r['name'],
+            'slug' => $r['slug'],
+            'sku' => $r['sku'] ?? '',
+            'short_description' => $r['sd'] ?? '',
+            'description' => $r['d'] ?? '',
+            'type' => $r['type'] ?? 'simple',
+            'prices' => ['regular_price' => (string) ($r['rp'] ?: 0), 'sale_price' => (string) ($r['sp'] ?: 0), 'currency_minor_unit' => 0],
+            'is_in_stock' => ($r['st'] ?? '') !== 'outofstock',
+            'categories' => array_map(fn ($id) => ['id' => $id], $r['cats'] ?? []),
+            'tags' => $r['tags'] ?? [],
+            'images' => array_map(fn ($src) => ['src' => $src], $r['imgs'] ?? []),
+        ];
     }
 
     /** 800px'i geçmeyen en büyük boy; yoksa asıl dosya. */
