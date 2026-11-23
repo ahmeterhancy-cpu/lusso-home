@@ -110,19 +110,7 @@ class ProductCsv
         $isXlsx = $magic === 'PK';
 
         if ($isXlsx) {
-            $reader = new XlsxReader;
-            $reader->open($path);
-            $rows = [];
-            foreach ($reader->getSheetIterator() as $sheet) {
-                foreach ($sheet->getRowIterator() as $row) {
-                    $rows[] = $row->toArray();
-                }
-                break; // yalnız ilk sayfa
-            }
-            $reader->close();
-            $head = array_shift($rows) ?? [];
-
-            return [$head, $rows];
+            return $this->readSheets($path)[0] ?? [[], []];
         }
 
         $content = (string) file_get_contents($path);
@@ -144,9 +132,77 @@ class ProductCsv
      */
     public function import(string $path, array $skipCategoryIds = []): array
     {
-        [$head, $rows] = $this->read($path);
+        $fh = @fopen($path, 'r');
+        $isXlsx = $fh && fread($fh, 2) === 'PK';
+        if ($fh) {
+            fclose($fh);
+        }
+        if (! $isXlsx) {
+            [$head, $rows] = $this->read($path);
 
-        return $this->apply($head, $rows, $skipCategoryIds);
+            return $this->apply($head, $rows, $skipCategoryIds);
+        }
+
+        // Excel: stok kodu sütunu olan her sayfa okunur (başka sayfalar — not, özet vb. — atlanır).
+        $res = ['updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'notFound' => [], 'errors' => []];
+        $used = 0;
+        $sheets = $this->readSheets($path);
+        foreach ($sheets as $name => [$head, $rows]) {
+            if (! $this->hasKeyColumn($head)) {
+                continue;
+            }
+            $used++;
+            $r = $this->apply($head, $rows, $skipCategoryIds);
+            $prefix = count($sheets) > 1 ? "[$name] " : '';
+            foreach (['updated', 'unchanged', 'skipped'] as $k) {
+                $res[$k] += $r[$k];
+            }
+            foreach (['notFound', 'errors'] as $k) {
+                foreach ($r[$k] as $m) {
+                    $res[$k][] = $prefix.$m;
+                }
+            }
+        }
+        if (! $used) {
+            $res['errors'][] = 'Dosyada "Stok Kodu" / "Ürün Kodu" (veya id) sütunu bulunamadı. İlk satır sütun başlıkları olmalı: Ürün Kodu, Fiyat, Stok …';
+        }
+
+        return $res;
+    }
+
+    /**
+     * Excel dosyasının bütün sayfaları: sayfa adı → [başlık, satırlar].
+     *
+     * @return array<string|int, array{0: array<int, mixed>, 1: array<int, array<int, mixed>>}>
+     */
+    public function readSheets(string $path): array
+    {
+        $reader = new XlsxReader;
+        $reader->open($path);
+        $out = [];
+        foreach ($reader->getSheetIterator() as $i => $sheet) {
+            $rows = [];
+            foreach ($sheet->getRowIterator() as $row) {
+                $rows[] = $row->toArray();
+            }
+            $head = array_shift($rows) ?? [];
+            $out[$sheet->getName() ?: $i] = [$head, $rows];
+        }
+        $reader->close();
+
+        return $out;
+    }
+
+    private function hasKeyColumn(array $head): bool
+    {
+        foreach ($head as $h) {
+            $k = self::headerKey($h);
+            if (in_array($k, self::ALIASES['id'], true) || in_array($k, self::ALIASES['stok_kodu'], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @return array{updated: int, unchanged: int, skipped: int, notFound: array<int, string>, errors: array<int, string>} */

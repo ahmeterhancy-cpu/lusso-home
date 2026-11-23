@@ -37,11 +37,32 @@ class SheetSync
         return $url;
     }
 
-    /** Ayarlarda kayıtlı dosyayı çalıştırır. $force: süre dolmamış olsa da çalıştır. */
+    /**
+     * Panelde tanımlı dosyalar (ad + bağlantı). Eski tek bağlantı ayarı (sheet_url) da okunur.
+     *
+     * @return array<int, array{name: string, url: string}>
+     */
+    public static function files(): array
+    {
+        $files = [];
+        foreach ((array) json_decode((string) setting('sheet_files'), true) as $i => $f) {
+            $url = trim((string) ($f['url'] ?? ''));
+            if ($url !== '') {
+                $files[] = ['name' => trim((string) ($f['name'] ?? '')) ?: 'Dosya '.($i + 1), 'url' => $url];
+            }
+        }
+        if (! $files && ($url = trim((string) setting('sheet_url'))) !== '') {
+            $files[] = ['name' => 'Dosya 1', 'url' => $url];
+        }
+
+        return $files;
+    }
+
+    /** Ayarlarda kayıtlı bütün dosyaları sırayla çalıştırır. $force: süre dolmamış / kapalı olsa da çalıştır. */
     public function run(bool $force = false): ?array
     {
-        $url = (string) setting('sheet_url');
-        if ($url === '' || (! $force && setting('sheet_enabled') !== '1')) {
+        $files = self::files();
+        if (! $files || (! $force && setting('sheet_enabled') !== '1')) {
             return null;
         }
         if (! $force) {
@@ -53,40 +74,81 @@ class SheetSync
         }
 
         $started = now();
-        try {
-            $res = Http::timeout(60)->withOptions(['allow_redirects' => ['max' => 5]])->get($this->downloadUrl($url));
-            if (! $res->successful()) {
-                throw new \RuntimeException('Dosya indirilemedi (HTTP '.$res->status().'). Paylaşım ayarı "Bağlantıya sahip herkes" olmalı.');
+        $skip = \App\Models\Category::sheetSyncExcludedIds();
+        $total = ['updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'notFound' => [], 'errors' => []];
+        $perFile = [];
+        $anyOk = false;
+        foreach ($files as $file) {
+            $multi = count($files) > 1;
+            $prefix = $multi ? $file['name'].': ' : '';
+            try {
+                $result = $this->importFile($file['url'], $skip);
+                $fileOk = empty($result['errors']) || $result['updated'] > 0;
+                $line = $this->describe($result);
+            } catch (\Throwable $e) {
+                $result = ['updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'notFound' => [], 'errors' => [$e->getMessage()]];
+                $fileOk = false;
+                $line = 'HATA: '.$e->getMessage();
+                Log::warning('[Drive senkron] '.$file['name'].': '.$e->getMessage());
             }
-            $body = $res->body();
-            if (str_contains(strtolower(substr($body, 0, 500)), '<html')) {
-                throw new \RuntimeException('Dosya yerine bir Google sayfası geldi. Dosyanın paylaşımını "Bağlantıya sahip herkes → Görüntüleyen" yapın.');
+            $anyOk = $anyOk || $fileOk;
+            $perFile[] = ['name' => $file['name'], 'ok' => $fileOk, 'summary' => $line];
+            foreach (['updated', 'unchanged', 'skipped'] as $k) {
+                $total[$k] += $result[$k];
             }
-            $tmp = tempnam(sys_get_temp_dir(), 'lusso-sheet-');
-            file_put_contents($tmp, $body);
-            $result = $this->csv->import($tmp, \App\Models\Category::sheetSyncExcludedIds());
-            @unlink($tmp);
-            $summary = "{$result['updated']} ürün güncellendi, {$result['unchanged']} değişmedi"
-                .($result['skipped'] ? ', '.$result['skipped'].' ürünün stoğu kategorisi Drive stok güncellemesine kapalı olduğu için değiştirilmedi (fiyatı güncellendi)' : '')
-                .($result['notFound'] ? ', '.count($result['notFound']).' stok kodu sitede bulunamadı' : '')
-                .($result['errors'] ? ', '.count($result['errors']).' uyarı' : '').'.';
-            $ok = empty($result['errors']) || $result['updated'] > 0;
-        } catch (\Throwable $e) {
-            $result = ['updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'notFound' => [], 'errors' => [$e->getMessage()]];
-            $summary = 'HATA: '.$e->getMessage();
-            $ok = false;
-            Log::warning('[Drive senkron] '.$e->getMessage());
+            foreach (['notFound', 'errors'] as $k) {
+                foreach ($result[$k] as $m) {
+                    $total[$k][] = $prefix.$m;
+                }
+            }
+        }
+
+        $failed = count(array_filter($perFile, fn ($f) => ! $f['ok']));
+        if (count($files) === 1) {
+            $summary = $perFile[0]['summary'];
+            $ok = $perFile[0]['ok'];
+        } else {
+            $summary = count($files).' dosya: '.$this->describe($total).($failed ? " ($failed dosyada hata)" : '');
+            $ok = $anyOk && ! $failed;
         }
 
         Setting::put([
             'sheet_last_run' => $started->toDateTimeString(),
             'sheet_last_result' => json_encode([
-                'ok' => $ok, 'at' => $started->format('d.m.Y H:i'), 'summary' => $summary,
-                'notFound' => array_slice($result['notFound'], 0, 30), 'errors' => array_slice($result['errors'], 0, 30),
+                'ok' => $ok, 'at' => $started->format('d.m.Y H:i'), 'summary' => $summary, 'files' => count($files) > 1 ? $perFile : [],
+                'notFound' => array_slice($total['notFound'], 0, 50), 'errors' => array_slice($total['errors'], 0, 50),
             ], JSON_UNESCAPED_UNICODE),
         ]);
         \App\Models\ActivityLog::record('custom', null, 'Drive fiyat/stok senkronu: '.$summary);
 
-        return $result + ['summary' => $summary, 'ok' => $ok];
+        return $total + ['summary' => $summary, 'ok' => $ok, 'files' => $perFile];
+    }
+
+    /** Tek dosyayı indirip içe aktarır. */
+    private function importFile(string $url, array $skip): array
+    {
+        $res = Http::timeout(60)->withOptions(['allow_redirects' => ['max' => 5]])->get($this->downloadUrl($url));
+        if (! $res->successful()) {
+            throw new \RuntimeException('Dosya indirilemedi (HTTP '.$res->status().'). Paylaşım ayarı "Bağlantıya sahip herkes" olmalı.');
+        }
+        $body = $res->body();
+        if (str_contains(strtolower(substr($body, 0, 500)), '<html')) {
+            throw new \RuntimeException('Dosya yerine bir Google sayfası geldi. Dosyanın paylaşımını "Bağlantıya sahip herkes → Görüntüleyen" yapın.');
+        }
+        $tmp = tempnam(sys_get_temp_dir(), 'lusso-sheet-');
+        file_put_contents($tmp, $body);
+        try {
+            return $this->csv->import($tmp, $skip);
+        } finally {
+            @unlink($tmp);
+        }
+    }
+
+    private function describe(array $r): string
+    {
+        return "{$r['updated']} ürün güncellendi, {$r['unchanged']} değişmedi"
+            .($r['skipped'] ? ', '.$r['skipped'].' ürünün stoğu kategorisi Drive stok güncellemesine kapalı olduğu için değiştirilmedi (fiyatı güncellendi)' : '')
+            .($r['notFound'] ? ', '.count($r['notFound']).' stok kodu sitede bulunamadı' : '')
+            .($r['errors'] ? ', '.count($r['errors']).' uyarı' : '').'.';
     }
 }
