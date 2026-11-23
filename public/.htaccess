@@ -3,6 +3,14 @@
     SetHandler application/x-httpd-alt-php83___lsphp
 </FilesMatch>
 
+# Her zaman https: oturum çerezleri yalnız https'te geçerli; http'de panel girişi "sayfa süresi doldu" ile düşer.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
 # Geçici adres (yeni.*) arama motorlarına kapalı.
 <IfModule mod_rewrite.c>
     RewriteEngine On
