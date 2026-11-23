@@ -11,7 +11,9 @@
         @yield('og')
     @else
         <meta property="og:title" content="{{ setting('site_name', 'Lusso Home Concept') }}">
-        <meta property="og:image" content="{{ asset('img/logo.png') }}">
+        <meta property="og:image" content="{{ asset('img/paylasim.jpg') }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
     @endif
     <meta property="og:site_name" content="Lusso Home Concept">
     <meta property="og:locale" content="tr_TR">
