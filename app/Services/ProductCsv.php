@@ -110,7 +110,7 @@ class ProductCsv
         $isXlsx = $magic === 'PK';
 
         if ($isXlsx) {
-            return $this->readSheets($path)[0] ?? [[], []];
+            return array_values($this->readSheets($path))[0] ?? [[], []];
         }
 
         $content = (string) file_get_contents($path);

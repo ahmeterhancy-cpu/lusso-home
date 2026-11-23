@@ -126,6 +126,9 @@ class AdminPowerToolsTest extends TestCase
             $s->downloadUrl('https://docs.google.com/spreadsheets/d/ABC_123/edit#gid=77'));
         $this->assertSame('https://drive.google.com/uc?export=download&id=FILE-9',
             $s->downloadUrl('https://drive.google.com/file/d/FILE-9/view?usp=sharing'));
+        // Drive'a yüklenmiş Excel'in E-Tablo bağlantısı (rtpof=true) dosyanın kendisinden indirilir
+        $this->assertSame('https://drive.google.com/uc?export=download&id=XL_1',
+            $s->downloadUrl('https://docs.google.com/spreadsheets/d/XL_1/edit?usp=sharing&ouid=1&rtpof=true&sd=true'));
     }
 
     public function test_sheet_sync_updates_prices_and_records_result(): void
@@ -208,6 +211,19 @@ class AdminPowerToolsTest extends TestCase
         $last = json_decode(setting('sheet_last_result'), true);
         $this->assertCount(2, $last['files']);
         $this->assertSame('Ahmet Bey Liste', $last['files'][0]['name']);
+    }
+
+    public function test_sheet_link_falls_back_to_drive_file_when_export_fails(): void
+    {
+        Http::fake([
+            'docs.google.com/*' => Http::response('Bad Request', 400),
+            'drive.google.com/*' => Http::response("Stok Kodu,Fiyat\nYE-1,3100\n"),
+        ]);
+        Setting::put(['sheet_files' => json_encode([['name' => 'Excel', 'url' => 'https://docs.google.com/spreadsheets/d/XL_2/edit']])]);
+        $r = app(SheetSync::class)->run(true);
+
+        $this->assertTrue($r['ok']);
+        $this->assertSame('3100.00', $this->p->refresh()->price);
     }
 
     public function test_one_broken_file_does_not_stop_the_others(): void
