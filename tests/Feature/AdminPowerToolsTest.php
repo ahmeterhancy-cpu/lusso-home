@@ -171,6 +171,63 @@ class AdminPowerToolsTest extends TestCase
         $this->assertSame('600.00', $manual->refresh()->price);
     }
 
+    public function test_sheet_sync_reads_multiple_files_and_excel_sheets(): void
+    {
+        $other = Product::create(['name' => 'Mum', 'slug' => 'mum', 'sku' => '2100200003', 'price' => 6000, 'in_stock' => false]);
+
+        // Müşterinin Excel biçimi: MARKA | ÜRÜN KODU | ÜRÜN ADI | ÜRÜN ÇEŞİDİ | FİYAT | STOK; ikinci sayfa notlar (kodsuz)
+        $xlsx = tempnam(sys_get_temp_dir(), 'x').'.xlsx';
+        $w = new \OpenSpout\Writer\XLSX\Writer;
+        $w->openToFile($xlsx);
+        $w->addRow(\OpenSpout\Common\Entity\Row::fromValues(['MARKA', 'ÜRÜN KODU', 'ÜRÜN ADI/KOLEKSİYON', 'ÜRÜN ÇEŞİDİ', 'FİYAT', 'STOK']));
+        $w->addRow(\OpenSpout\Common\Entity\Row::fromValues(['Ladenac Milano', 2100200003, 'Bois De Roussie', 'Mavi Seramik Mum', 6850, 2]));
+        $w->addNewSheetAndMakeItCurrent();
+        $w->addRow(\OpenSpout\Common\Entity\Row::fromValues(['Not']));
+        $w->addRow(\OpenSpout\Common\Entity\Row::fromValues(['Fiyatlar KDV dahil']));
+        $w->close();
+
+        Http::fake([
+            'drive.google.com/*' => Http::response(file_get_contents($xlsx)),
+            'docs.google.com/*' => Http::response("Stok Kodu,Fiyat,Stok\nYE-1,2500,7\nYOK-9,1,1\n"),
+        ]);
+        Setting::put(['sheet_files' => json_encode([
+            ['name' => 'Ahmet Bey Liste', 'url' => 'https://drive.google.com/file/d/X/view'],
+            ['name' => 'Diğer', 'url' => 'https://docs.google.com/spreadsheets/d/Y/edit'],
+        ])]);
+        $r = app(SheetSync::class)->run(true);
+
+        $this->assertTrue($r['ok']);
+        $this->assertSame(2, $r['updated']);
+        $this->assertStringContainsString('2 dosya', $r['summary']);
+        $this->assertSame(['Diğer: Satır 3: YOK-9'], $r['notFound']);
+        $other->refresh();
+        $this->assertSame('6850.00', $other->price);
+        $this->assertSame(2, $other->stock_qty);
+        $this->assertTrue($other->in_stock);
+        $this->assertSame('2500.00', $this->p->refresh()->price);
+        $last = json_decode(setting('sheet_last_result'), true);
+        $this->assertCount(2, $last['files']);
+        $this->assertSame('Ahmet Bey Liste', $last['files'][0]['name']);
+    }
+
+    public function test_one_broken_file_does_not_stop_the_others(): void
+    {
+        Http::fake([
+            'drive.google.com/*' => Http::response('<html>oturum açın</html>'),
+            'docs.google.com/*' => Http::response("Stok Kodu,Fiyat\nYE-1,2700\n"),
+        ]);
+        Setting::put(['sheet_files' => json_encode([
+            ['name' => 'Gizli', 'url' => 'https://drive.google.com/file/d/X/view'],
+            ['name' => 'Açık', 'url' => 'https://docs.google.com/spreadsheets/d/Y/edit'],
+        ])]);
+        $r = app(SheetSync::class)->run(true);
+
+        $this->assertFalse($r['ok']);
+        $this->assertStringContainsString('1 dosyada hata', $r['summary']);
+        $this->assertSame('2700.00', $this->p->refresh()->price);
+        $this->assertStringContainsString('Gizli: Dosya yerine', $r['errors'][0]);
+    }
+
     public function test_sheet_sync_reports_private_file(): void
     {
         Http::fake(['*' => Http::response('<html><body>Google Drive – oturum açın</body></html>')]);
@@ -226,9 +283,11 @@ class AdminPowerToolsTest extends TestCase
             '/admin/tags', '/admin/manage-settings', '/admin/manage-appearance?tab=alt-bilgi'] as $url) {
             $this->get($url)->assertOk();
         }
-        Livewire::test(ManageSheetSync::class)->set('data.sheet_url', 'https://docs.google.com/spreadsheets/d/A/edit')->set('data.sheet_enabled', true)
-            ->call('save');
+        Livewire::test(ManageSheetSync::class)
+            ->set('data.files', [['name' => 'Ladenac', 'url' => 'https://docs.google.com/spreadsheets/d/A/edit'], ['name' => '', 'url' => 'https://drive.google.com/file/d/B/view']])
+            ->set('data.sheet_enabled', true)->call('save');
         $this->assertSame('1', setting('sheet_enabled'));
+        $this->assertSame([['name' => 'Ladenac', 'url' => 'https://docs.google.com/spreadsheets/d/A/edit'], ['name' => 'Dosya 2', 'url' => 'https://drive.google.com/file/d/B/view']], SheetSync::files());
     }
 
     public function test_roles_limit_panel_areas(): void

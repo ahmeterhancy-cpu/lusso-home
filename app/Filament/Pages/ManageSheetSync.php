@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Services\SheetSync;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -43,7 +44,7 @@ class ManageSheetSync extends Page implements HasSchemas
     public function mount(): void
     {
         $this->form->fill([
-            'sheet_url' => setting('sheet_url'),
+            'files' => SheetSync::files() ?: [['name' => '', 'url' => '']],
             'sheet_enabled' => setting('sheet_enabled') === '1',
             'sheet_interval' => setting('sheet_interval', '60'),
         ]);
@@ -52,9 +53,12 @@ class ManageSheetSync extends Page implements HasSchemas
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Dosya bağlantısı')->schema([
-                TextInput::make('sheet_url')->label('Google Drive / E-Tablo bağlantısı')->url()->maxLength(500)
-                    ->placeholder('https://docs.google.com/spreadsheets/d/… veya https://drive.google.com/file/d/…')
+            Section::make('Dosyalar')->description('Birden fazla Excel / E-Tablo eklenebilir; hepsi sırayla okunur. Aynı ürün kodu iki dosyada varsa listede alttaki dosya geçerli olur.')->schema([
+                Repeater::make('files')->hiddenLabel()->schema([
+                    TextInput::make('name')->label('Dosya adı')->placeholder('Ör. Ladenac Milano listesi')->maxLength(100)->columnSpan(1),
+                    TextInput::make('url')->label('Google Drive / E-Tablo bağlantısı')->url()->maxLength(500)
+                        ->placeholder('https://drive.google.com/file/d/… veya https://docs.google.com/spreadsheets/d/…')->columnSpan(2),
+                ])->columns(3)->addActionLabel('Dosya ekle')->reorderable()->defaultItems(1)
                     ->helperText('Drive\'da dosyaya sağ tık → Paylaş → Genel erişim: "Bağlantıya sahip olan herkes" (Görüntüleyen) → Bağlantıyı kopyala.'),
                 Toggle::make('sheet_enabled')->label('Otomatik güncelleme açık'),
                 Select::make('sheet_interval')->label('Ne sıklıkla?')->options([
@@ -69,7 +73,10 @@ class ManageSheetSync extends Page implements HasSchemas
     {
         $d = $this->form->getState();
         Setting::put([
-            'sheet_url' => trim((string) $d['sheet_url']),
+            'sheet_files' => json_encode(collect($d['files'] ?? [])->values()
+                ->map(fn ($f) => ['name' => trim((string) ($f['name'] ?? '')), 'url' => trim((string) ($f['url'] ?? ''))])
+                ->filter(fn ($f) => $f['url'] !== '')->values()->all(), JSON_UNESCAPED_UNICODE),
+            'sheet_url' => '', // eski tek bağlantı ayarı artık sheet_files içinde
             'sheet_enabled' => ! empty($d['sheet_enabled']) ? '1' : '0',
             'sheet_interval' => (string) ($d['sheet_interval'] ?? '60'),
         ]);
@@ -85,7 +92,7 @@ class ManageSheetSync extends Page implements HasSchemas
                     $this->save();
                     $r = app(SheetSync::class)->run(true);
                     if (! $r) {
-                        Notification::make()->title('Önce dosya bağlantısını girin')->warning()->send();
+                        Notification::make()->title('Önce en az bir dosya bağlantısı girin')->warning()->send();
 
                         return;
                     }

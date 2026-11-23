@@ -11,6 +11,13 @@
                 <x-filament::badge :color="$last['ok'] ? 'success' : 'danger'">{{ $last['ok'] ? 'Başarılı' : 'Hata' }}</x-filament::badge>
                 <span class="text-sm" style="margin-left:8px">{{ $last['at'] }} — {{ $last['summary'] }}</span>
             </p>
+            @if (! empty($last['files']))
+                <ul class="text-sm" style="margin:6px 0 0 18px;list-style:disc">
+                    @foreach ($last['files'] as $f)
+                        <li><strong>{{ $f['name'] }}</strong>: <span style="color:{{ $f['ok'] ? 'inherit' : '#dc2626' }}">{{ $f['summary'] }}</span></li>
+                    @endforeach
+                </ul>
+            @endif
             @if (! empty($last['notFound']))
                 <details style="margin-top:8px"><summary class="text-sm" style="cursor:pointer">Sitede bulunamayan stok kodları ({{ count($last['notFound']) }})</summary>
                     <ul class="text-sm" style="margin:6px 0 0 18px;list-style:disc">@foreach ($last['notFound'] as $n)<li>{{ $n }}</li>@endforeach</ul>
@@ -36,11 +43,13 @@
             </table>
             <ul style="margin-left:18px;list-style:disc">
                 <li>Yalnız dosyada olan sütunlar güncellenir; örneğin sadece "Stok Kodu" ve "Stok" varsa fiyatlara dokunulmaz.</li>
-                <li>Kabul edilen başlıklar: <em>Stok Kodu / SKU / Barkod</em>, <em>Fiyat / Satış Fiyatı</em>, <em>İndirimli Fiyat</em>, <em>Stok / Adet / Miktar</em>, <em>Stokta</em>, <em>Yayında</em> (Evet/Hayır).</li>
+                <li>Kabul edilen başlıklar: <em>Ürün Kodu / Stok Kodu / SKU / Barkod</em>, <em>Fiyat / Satış Fiyatı</em>, <em>İndirimli Fiyat</em>, <em>Stok / Adet / Miktar</em>, <em>Stokta</em>, <em>Yayında</em> (Evet/Hayır).</li>
                 <li>Stok 0 olan ürün "stokta yok" olur ve sepete eklenemez; adet girilince tekrar satışa açılır.</li>
                 <li>Dosyada olmayan ürünlere dokunulmaz; yeni ürün oluşturulmaz, ürün silinmez.</li>
                 <li>Bazı kategorilerin stoğunu elle yönetmek için: Katalog → Kategoriler → <strong>"Drive stok"</strong> anahtarını kapatın. O kategori ve alt kategorilerindeki ürünlerin <strong>fiyatı yine güncellenir, stoğu değişmez</strong>.</li>
-                <li>Google E-Tablo da olur, Drive'a yüklenmiş .xlsx / .csv dosyası da. Birden çok sayfa varsa ilk sayfa okunur.</li>
+                <li>Google E-Tablo da olur, Drive'a yüklenmiş .xlsx / .csv dosyası da. Excel'de birden çok sayfa varsa "Ürün Kodu / Stok Kodu" sütunu olan her sayfa okunur.</li>
+                <li>Birden fazla dosya eklenebilir (ör. marka marka ayrı listeler). Aynı ürün kodu iki dosyada varsa listede alttaki dosya geçerli olur.</li>
+                <li>Başka sütunlar (Marka, Ürün Adı, Ürün Çeşidi …) olabilir, okunmaz; site ürün adlarını değiştirmez.</li>
                 <li>Bağlantıyı bilen herkes dosyayı görebilir; dosyada fiyat ve stok dışında hassas bilgi tutmayın.</li>
             </ul>
         </div>
