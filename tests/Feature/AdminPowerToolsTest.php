@@ -188,6 +188,7 @@ class AdminPowerToolsTest extends TestCase
         $w->addRow(\OpenSpout\Common\Entity\Row::fromValues(['Not']));
         $w->addRow(\OpenSpout\Common\Entity\Row::fromValues(['Fiyatlar KDV dahil']));
         $w->close();
+        $this->assertSame('ÜRÜN KODU', app(ProductCsv::class)->read($xlsx)[0][1]); // sayfa adı olan ilk sayfa da okunur
 
         Http::fake([
             'drive.google.com/*' => Http::response(file_get_contents($xlsx)),
