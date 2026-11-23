@@ -26,6 +26,10 @@ class SheetSync
             if (str_contains($url, '/pub')) {
                 return $url; // "Web'de yayınla" bağlantısı zaten indirilebilir
             }
+            if (str_contains($url, 'rtpof=true')) {
+                // Drive'a yüklenmiş .xlsx, E-Tablo'da açılmış: dışa aktarma 400 verir, dosyanın kendisi indirilir.
+                return "https://drive.google.com/uc?export=download&id={$m[1]}";
+            }
             $gid = preg_match('~[#&?]gid=(\d+)~', $url, $g) ? $g[1] : '0';
 
             return "https://docs.google.com/spreadsheets/d/{$m[1]}/export?format=csv&gid={$gid}";
@@ -128,6 +132,10 @@ class SheetSync
     private function importFile(string $url, array $skip): array
     {
         $res = Http::timeout(60)->withOptions(['allow_redirects' => ['max' => 5]])->get($this->downloadUrl($url));
+        // E-Tablo bağlantısı aslında yüklenmiş bir Excel dosyasıysa dışa aktarma 400 verir: dosyanın kendisini dene.
+        if (! $res->successful() && preg_match('~docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)~', $url, $m)) {
+            $res = Http::timeout(60)->withOptions(['allow_redirects' => ['max' => 5]])->get("https://drive.google.com/uc?export=download&id={$m[1]}");
+        }
         if (! $res->successful()) {
             throw new \RuntimeException('Dosya indirilemedi (HTTP '.$res->status().'). Paylaşım ayarı "Bağlantıya sahip herkes" olmalı.');
         }
