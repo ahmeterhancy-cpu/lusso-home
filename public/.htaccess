@@ -3,6 +3,20 @@
     SetHandler application/x-httpd-alt-php83___lsphp
 </FilesMatch>
 
+# Tek adres: www ve geçici yeni.* → https://lussohomeconcept.com
+# Eski WordPress dosya/panel adresleri → eski.lussohomeconcept.com (eski bağlantılar ve görseller kırılmasın)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteCond %{HTTP_HOST} ^(www|yeni)\.lussohomeconcept\.com$ [NC]
+    RewriteRule ^ https://lussohomeconcept.com%{REQUEST_URI} [L,R=301]
+
+    RewriteCond %{HTTP_HOST} ^lussohomeconcept\.com$ [NC]
+    RewriteRule ^(wp-content|wp-includes|wp-admin|wp-json)(/.*)?$ https://eski.lussohomeconcept.com%{REQUEST_URI} [L,R=301]
+    RewriteCond %{HTTP_HOST} ^lussohomeconcept\.com$ [NC]
+    RewriteRule ^wp-login\.php$ https://eski.lussohomeconcept.com%{REQUEST_URI} [L,R=301]
+</IfModule>
+
 # Her zaman https: oturum çerezleri yalnız https'te geçerli; http'de panel girişi "sayfa süresi doldu" ile düşer.
 <IfModule mod_rewrite.c>
     RewriteEngine On
